@@ -15,7 +15,8 @@ import {
   LogIn, 
   Sparkles,
   LogOut,
-  User
+  User,
+  LayoutDashboard
 } from "lucide-react";
 import { logoutAction } from "@/app/login/actions";
 
@@ -30,7 +31,12 @@ const NAV_ITEMS = [
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [demoUser, setDemoUser] = useState<{ name: string; email: string; role: string } | null>(null);
+  const [user, setUser] = useState<{
+    name: string;
+    email: string;
+    role: string;
+    dashboard?: string;
+  } | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -40,14 +46,27 @@ export default function Navbar() {
     if (found) {
       try {
         const decoded = decodeURIComponent(found.split("=")[1]);
-        setDemoUser(JSON.parse(decoded));
+        setUser(JSON.parse(decoded));
       } catch {
-        setDemoUser(null);
+        setUser(null);
       }
     } else {
-      setDemoUser(null);
+      setUser(null);
     }
   }, [pathname]);
+
+  const getPortalLink = () => {
+    if (!user) return "/login";
+    if (user.dashboard) return user.dashboard;
+    switch (user.role) {
+      case "PRESIDENT": return "/admin";
+      case "TREASURER": return "/treasurer";
+      case "VP_EVENTS": return "/events-manager";
+      case "VOLUNTEER": return "/volunteer";
+      case "MEMBER": return "/member";
+      default: return "/guest";
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-primary text-white shadow-md transition-colors">
@@ -95,69 +114,56 @@ export default function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
-            {demoUser ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-primary-hover/80 px-3 py-1.5 rounded-xl border border-primary-light/20">
-                  <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-white">
-                    G
-                  </div>
-                  <div className="text-left text-xs">
-                    <span className="font-semibold block leading-tight text-white">{demoUser.name}</span>
-                    <span className="badge-info text-[10px] px-1.5 py-0.2 rounded font-bold">{demoUser.role} PASS</span>
-                  </div>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href={getPortalLink()}
+                  className="flex items-center gap-2 bg-secondary hover:bg-secondary-hover text-white px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>{user.role} Portal</span>
+                </Link>
+
+                <div className="flex items-center gap-2 bg-primary-hover/80 px-3 py-1.5 rounded-xl border border-primary-light/20 text-xs">
+                  <User className="w-3.5 h-3.5 text-secondary-light" />
+                  <span className="font-bold truncate max-w-[120px]">{user.name}</span>
                 </div>
 
                 <form action={logoutAction}>
                   <button
                     type="submit"
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg text-primary-light hover:text-white hover:bg-primary-hover transition-colors"
+                    className="p-2 rounded-xl bg-primary-hover text-primary-light hover:text-white hover:bg-red-500/20 transition-all"
+                    title="Sign Out"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
+                    <LogOut className="w-4 h-4" />
                   </button>
                 </form>
               </div>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg text-white hover:bg-primary-hover transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-primary-light hover:text-white hover:bg-primary-hover transition-all"
                 >
-                  <LogIn className="w-4 h-4" />
+                  <LogIn className="w-3.5 h-3.5" />
                   <span>Sign In</span>
                 </Link>
                 <Link
-                  href="/membership"
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-secondary hover:bg-secondary-hover text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                  href="/register"
+                  className="flex items-center gap-1.5 bg-secondary hover:bg-secondary-hover text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Join Skyline</span>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Join Club</span>
                 </Link>
-              </>
+              </div>
             )}
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
-            {!demoUser ? (
-              <Link
-                href="/login"
-                className="p-2 text-primary-light hover:text-white hover:bg-primary-hover rounded-lg transition-colors"
-                aria-label="Sign In"
-              >
-                <LogIn className="w-5 h-5" />
-              </Link>
-            ) : (
-              <span className="badge-info text-[10px] font-bold px-2 py-0.5 rounded">
-                GUEST
-              </span>
-            )}
+          <div className="md:hidden flex items-center">
             <button
-              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-primary-light hover:text-white hover:bg-primary-hover transition-colors focus:outline-none focus:ring-2 focus:ring-secondary"
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileMenuOpen}
+              className="p-2 rounded-lg bg-primary-hover text-primary-light hover:text-white focus:outline-none"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -165,71 +171,64 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-primary-hover bg-primary px-4 pt-3 pb-6 space-y-2 shadow-xl animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden border-t border-primary-hover bg-primary px-4 pt-3 pb-6 space-y-3">
+          {user && (
+            <div className="p-3 bg-primary-hover rounded-xl flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold block">{user.name}</span>
+                <span className="text-[10px] text-primary-light">{user.role} Account</span>
+              </div>
+              <Link
+                href={getPortalLink()}
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-1 bg-secondary text-white rounded-lg text-xs font-bold"
+              >
+                Go to Portal &rarr;
+              </Link>
+            </div>
+          )}
+
           <div className="space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary-hover text-white ring-1 ring-secondary/50"
-                      : "text-primary-light hover:bg-primary-hover/70 hover:text-white"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 opacity-90" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover"
+              >
+                <item.icon className="w-4 h-4 opacity-80" />
+                <span>{item.name}</span>
+              </Link>
+            ))}
           </div>
 
-          <div className="pt-4 border-t border-primary-hover/80 space-y-2">
-            {demoUser ? (
-              <div className="space-y-2">
-                <div className="px-3 py-2 rounded-lg bg-primary-hover text-xs flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-secondary-light" />
-                    <span>{demoUser.name}</span>
-                  </div>
-                  <span className="badge-info text-[10px] font-bold px-2 py-0.5 rounded">
-                    {demoUser.role}
-                  </span>
-                </div>
-                <form action={logoutAction}>
-                  <button
-                    type="submit"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary-hover text-white hover:bg-primary-hover/90 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign Out of Demo</span>
-                  </button>
-                </form>
-              </div>
+          <div className="pt-2 border-t border-primary-hover/50 flex gap-2">
+            {user ? (
+              <form action={logoutAction} className="w-full">
+                <button
+                  type="submit"
+                  className="w-full py-2 bg-red-600/30 text-white rounded-xl text-xs font-bold"
+                >
+                  Sign Out
+                </button>
+              </form>
             ) : (
               <>
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary-hover text-white hover:bg-primary-hover/90 transition-colors"
+                  className="flex-1 text-center py-2 bg-primary-hover rounded-xl text-xs font-bold"
                 >
-                  <LogIn className="w-4 h-4" />
-                  <span>Sign In (Demo Available)</span>
+                  Sign In
                 </Link>
                 <Link
-                  href="/membership"
+                  href="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-secondary hover:bg-secondary-hover text-white shadow transition-colors"
+                  className="flex-1 text-center py-2 bg-secondary text-white rounded-xl text-xs font-bold"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Get Member Pass</span>
+                  Join Club
                 </Link>
               </>
             )}
