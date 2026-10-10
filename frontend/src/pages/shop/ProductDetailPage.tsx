@@ -43,6 +43,20 @@ export default function ProductDetailPage() {
     }
     setIsOrdering(true);
     setTimeout(() => {
+      const newOrder = {
+        id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: new Date().toLocaleDateString("en-IN", { month: "long", day: "2-digit", year: "numeric" }),
+        totalAmount: totalPrice,
+        status: "PAID",
+        items: [
+          { name: product.name, size: selectedSize, quantity, price: currentPrice },
+        ],
+        pickupLocation: "Student Council Merchandise Counter, Ground Floor",
+      };
+      try {
+        const prev = JSON.parse(localStorage.getItem("user_orders") || "[]");
+        localStorage.setItem("user_orders", JSON.stringify([newOrder, ...prev]));
+      } catch {}
       setIsOrdering(false);
       setIsOrdered(true);
     }, 1000);

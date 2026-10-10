@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
   ShoppingBag, CheckCircle2, Clock, PackageCheck, 
   MapPin, ArrowRight 
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { getDemoUser } from "@/lib/auth-demo";
 
 const MY_ORDERS = [
   {
@@ -41,15 +42,31 @@ const MY_ORDERS = [
 
 export default function MyOrdersPage() {
   const [filter, setFilter] = useState<"ALL" | "PAID" | "COLLECTED">("ALL");
+  const [user, setUser] = useState<any>(null);
+  const [orderList, setOrderList] = useState<any[]>(MY_ORDERS);
 
-  const filtered = MY_ORDERS.filter((o) => filter === "ALL" || o.status === filter);
+  useEffect(() => {
+    getDemoUser().then((u) => {
+      setUser(u);
+      try {
+        const stored = localStorage.getItem("user_orders");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setOrderList([...parsed, ...MY_ORDERS]);
+        }
+      } catch {}
+    });
+  }, []);
+
+  const isGuest = user?.role === "GUEST";
+  const filtered = orderList.filter((o) => filter === "ALL" || o.status === filter);
 
   return (
     <DashboardLayout
-      role="MEMBER"
-      breadcrumb={[{ label: "Member Hub", href: "/me" }, { label: "My Orders" }]}
-      title="Merchandise Orders"
-      subtitle="Track your campus store apparel and pickup status."
+      role={isGuest ? "GUEST" : "MEMBER"}
+      breadcrumb={[{ label: isGuest ? "Guest Hub" : "Member Hub", href: "/me" }, { label: "My Orders" }]}
+      title={isGuest ? "My Guest Orders" : "Merchandise Orders"}
+      subtitle={isGuest ? "Track your guest store apparel and merchandise pickup status." : "Track your campus store apparel and pickup status."}
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">

@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
   Ticket, QrCode, Download, Calendar, MapPin, 
   CheckCircle2, Clock, Sparkles 
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { getDemoUser } from "@/lib/auth-demo";
 
 const MY_TICKETS = [
   {
@@ -44,15 +45,31 @@ const MY_TICKETS = [
 
 export default function MyTicketsPage() {
   const [filter, setFilter] = useState<"ALL" | "VALID" | "CHECKED_IN">("ALL");
+  const [user, setUser] = useState<any>(null);
+  const [ticketList, setTicketList] = useState<any[]>(MY_TICKETS);
 
-  const filtered = MY_TICKETS.filter((t) => filter === "ALL" || t.status === filter);
+  useEffect(() => {
+    getDemoUser().then((u) => {
+      setUser(u);
+      try {
+        const stored = localStorage.getItem("user_tickets");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setTicketList([...parsed, ...MY_TICKETS]);
+        }
+      } catch {}
+    });
+  }, []);
+
+  const isGuest = user?.role === "GUEST";
+  const filtered = ticketList.filter((t) => filter === "ALL" || t.status === filter);
 
   return (
     <DashboardLayout
-      role="MEMBER"
-      breadcrumb={[{ label: "Member Hub", href: "/me" }, { label: "My Tickets" }]}
-      title="My Event Passes"
-      subtitle="Digital event tickets with fast-track entry QR tokens."
+      role={isGuest ? "GUEST" : "MEMBER"}
+      breadcrumb={[{ label: isGuest ? "Guest Hub" : "Member Hub", href: "/me" }, { label: "My Passes" }]}
+      title={isGuest ? "My Guest Event Passes" : "My Event Passes"}
+      subtitle={isGuest ? "Confirmed visitor tickets and QR passes for campus events." : "Digital event tickets with fast-track entry QR tokens."}
     >
       <div className="space-y-6">
         {/* Filters */}

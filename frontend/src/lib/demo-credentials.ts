@@ -48,18 +48,6 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
     description: "Club P&L dashboard, expense claim approvals & payouts, fundraiser takings, and CSV ledger export.",
   },
   {
-    id: "volunteer",
-    roleName: "Volunteer",
-    badge: "OPERATIONS CREW",
-    badgeColor: "bg-amber-500/20 text-amber-700 border-amber-400",
-    email: "volunteer@skyline.test",
-    password: "volunteer123",
-    name: "Ananya Iyer",
-    role: "VOLUNTEER",
-    dashboard: "/volunteer",
-    description: "Assigned tasks kanban board, sponsor deliverable execution, and live QR ticket check-in scanner.",
-  },
-  {
     id: "member",
     roleName: "Active Member",
     badge: "VERIFIED MEMBER",
@@ -70,18 +58,6 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
     role: "MEMBER",
     dashboard: "/me",
     description: "Digital membership card with QR token, member merch discounts, and registered event passes.",
-  },
-  {
-    id: "guest",
-    roleName: "Campus Guest",
-    badge: "VISITOR",
-    badgeColor: "bg-slate-500/20 text-slate-700 border-slate-400",
-    email: "guest@skyline.edu",
-    password: "guest123",
-    name: "Demo Guest Explorer",
-    role: "GUEST",
-    dashboard: "/me",
-    description: "Public event ticket purchases and merchandise ordering at standard non-member rates.",
   },
 ];
 

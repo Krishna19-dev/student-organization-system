@@ -140,11 +140,10 @@ const NAV_CONFIG: Record<DashboardRole, NavSection[]> = {
   ],
   GUEST: [
     {
-      title: "WORKSPACE",
+      title: "GUEST DESK",
       items: [
         { label: "Guest Hub", href: "/me", icon: LayoutDashboard },
-        { label: "Digital Card", href: "/me/card", icon: CreditCard },
-        { label: "My Tickets", href: "/me/tickets", icon: Ticket },
+        { label: "My Passes", href: "/me/tickets", icon: Ticket },
         { label: "My Orders", href: "/me/orders", icon: ShoppingBag },
       ],
     },

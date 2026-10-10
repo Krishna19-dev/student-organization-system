@@ -54,6 +54,10 @@ export default function CheckoutTicketPage() {
         issuedAt: new Date().toLocaleDateString("en-IN", { month: "short", day: "2-digit", year: "numeric" }),
         qrToken: `SKYLINE-PASS-${id}-${Date.now()}`
       };
+      try {
+        const prev = JSON.parse(localStorage.getItem("user_tickets") || "[]");
+        localStorage.setItem("user_tickets", JSON.stringify([generatedTicket, ...prev]));
+      } catch {}
       setTicketIssued(generatedTicket);
       setIsProcessing(false);
     }, 1200);
