@@ -72,18 +72,6 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
     description: "Digital membership card with QR token, member merch discounts, and registered event passes.",
   },
   {
-    id: "applicant",
-    roleName: "Membership Applicant",
-    badge: "UNDER REVIEW",
-    badgeColor: "bg-orange-500/20 text-orange-700 border-orange-400",
-    email: "applicant@skyline.test",
-    password: "applicant123",
-    name: "Simran Kaur",
-    role: "GUEST",
-    dashboard: "/application-status",
-    description: "Submitted membership application currently undergoing President review queue.",
-  },
-  {
     id: "guest",
     roleName: "Campus Guest",
     badge: "VISITOR",

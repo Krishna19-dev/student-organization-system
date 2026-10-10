@@ -40,7 +40,6 @@ enum MembershipTier {
 
 enum SystemRole {
   VOLUNTEER
-  VP_EVENTS
   TREASURER
   PRESIDENT
 }

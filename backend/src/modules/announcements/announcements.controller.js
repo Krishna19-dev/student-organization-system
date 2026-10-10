@@ -9,7 +9,7 @@ exports.listAnnouncements = asyncHandler(async (req, res) => {
   const ps = Math.max(1, Math.min(100, parseInt(pageSize, 10) || 20));
 
   const role = req.effective?.role || 'GUEST';
-  const isMemberOrAbove = ['MEMBER', 'VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'].includes(role);
+  const isMemberOrAbove = ['MEMBER', 'VOLUNTEER', 'TREASURER', 'PRESIDENT'].includes(role);
 
   const where = {};
   if (!isMemberOrAbove) {

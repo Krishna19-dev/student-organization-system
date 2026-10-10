@@ -20,7 +20,7 @@ router.get(
 
 router.get(
   '/events/:id',
-  requireRole('VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('TREASURER', 'PRESIDENT'),
   financeController.eventPnl
 );
 

@@ -15,7 +15,7 @@ async function getEffectiveRole(userId) {
     },
   });
 
-  const order = ['PRESIDENT', 'TREASURER', 'VP_EVENTS', 'VOLUNTEER'];
+  const order = ['PRESIDENT', 'TREASURER', 'VOLUNTEER'];
   const top = order.find((r) => assignments.some((a) => a.role === r));
   if (top) {
     const a = assignments.find((x) => x.role === top);
@@ -53,11 +53,10 @@ function dashboardRoute(e) {
   if (e.status === 'UNDER_REVIEW' || e.status === 'REJECTED') return '/application-status';
   const routes = {
     PRESIDENT: '/admin',
-    TREASURER: '/treasurer',
-    VP_EVENTS: '/events-manager',
+    TREASURER: '/finance',
     VOLUNTEER: '/volunteer',
-    MEMBER: '/member',
-    GUEST: '/guest',
+    MEMBER: '/me',
+    GUEST: '/',
   };
   return routes[e.role] || '/guest';
 }

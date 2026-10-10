@@ -2,7 +2,6 @@ const applicationService = require('../../services/application.service');
 const membershipService = require('../../services/membership.service');
 const paymentService = require('../../services/payment.service');
 const orderService = require('../../services/order.service');
-const electionService = require('../../services/election.service');
 const auditService = require('../../services/audit.service');
 const asyncHandler = require('../../lib/asyncHandler');
 
@@ -58,16 +57,6 @@ exports.adminOrders = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
-// Elections & Roles
-exports.elect = asyncHandler(async (req, res) => {
-  const result = await electionService.electOfficer(req.user.id, req.body);
-  res.json({ message: 'Officer elected successfully', assignment: result });
-});
-
-exports.listRoles = asyncHandler(async (req, res) => {
-  const result = await electionService.listRoleAssignments();
-  res.json(result);
-});
 
 // Audit
 exports.auditLog = asyncHandler(async (req, res) => {

@@ -9,12 +9,12 @@ router.use(requireAuth);
 // Fundraisers
 router.post(
   '/fundraisers',
-  requireRole('VP_EVENTS', 'PRESIDENT'),
+  requireRole('PRESIDENT'),
   tasksController.createFundraiser
 );
 router.get(
   '/fundraisers/:id',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'TREASURER', 'PRESIDENT'),
   tasksController.getFundraiser
 );
 router.post(
@@ -26,7 +26,7 @@ router.post(
 // If mounted at /api/fundraisers directly:
 router.post(
   '/',
-  requireRole('VP_EVENTS', 'PRESIDENT'),
+  requireRole('PRESIDENT'),
   (req, res, next) => {
     if (req.baseUrl.includes('fundraisers')) {
       return tasksController.createFundraiser(req, res, next);
@@ -36,7 +36,7 @@ router.post(
 );
 router.get(
   '/:id',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'TREASURER', 'PRESIDENT'),
   (req, res, next) => {
     if (req.baseUrl.includes('fundraisers')) {
       return tasksController.getFundraiser(req, res, next);
@@ -53,32 +53,32 @@ router.post(
 // Tasks
 router.post(
   '/tasks',
-  requireRole('VP_EVENTS', 'PRESIDENT'),
+  requireRole('PRESIDENT'),
   tasksController.createTask
 );
 router.get(
   '/tasks/mine',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'TREASURER', 'PRESIDENT'),
   tasksController.myTasks
 );
 router.get(
   '/mine',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'TREASURER', 'PRESIDENT'),
   tasksController.myTasks
 );
 router.get(
   '/tasks',
-  requireRole('VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('TREASURER', 'PRESIDENT'),
   tasksController.listTasks
 );
 router.patch(
   '/tasks/:id/status',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'PRESIDENT'),
   tasksController.updateTaskStatus
 );
 router.patch(
   '/:id/status',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'PRESIDENT'),
   tasksController.updateTaskStatus
 );
 

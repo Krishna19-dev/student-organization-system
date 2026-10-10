@@ -9,14 +9,14 @@ router.use(requireAuth);
 
 router.post(
   '/',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'TREASURER', 'PRESIDENT'),
   uploadReceipt,
   expensesController.submitClaim
 );
 
 router.get(
   '/mine',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'TREASURER', 'PRESIDENT'),
   expensesController.myClaims
 );
 

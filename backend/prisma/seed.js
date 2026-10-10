@@ -56,28 +56,6 @@ async function main() {
     }
   });
 
-  // 4. VP Events
-  const vpEvents = await prisma.user.upsert({
-    where: { email: 'vp.events@skyline.test' },
-    update: {},
-    create: { email: 'vp.events@skyline.test', name: 'Rohan Kapoor', password: hash('vpevents123') }
-  });
-  await prisma.roleAssignment.upsert({
-    where: { id: 'seed-vp-role' },
-    update: {},
-    create: { id: 'seed-vp-role', userId: vpEvents.id, role: 'VP_EVENTS' }
-  });
-  await prisma.membership.upsert({
-    where: { memberCode: 'MBR-VP' },
-    update: {},
-    create: {
-      userId: vpEvents.id, membershipPlanId: premiumPlan.id,
-      status: 'ACTIVE', startDate: new Date(),
-      expiryDate: new Date(Date.now() + 365 * 86400 * 1000),
-      memberCode: 'MBR-VP', qrToken: crypto.randomBytes(16).toString('hex')
-    }
-  });
-
   // 5. Volunteer (Technical Lead)
   const volunteer = await prisma.user.upsert({
     where: { email: 'volunteer@skyline.test' },
@@ -281,7 +259,7 @@ async function main() {
   // 14. Announcement
   await prisma.announcement.create({
     data: {
-      authorId: vpEvents.id,
+      authorId: president.id,
       title: 'Spring Gala Tickets Now Live!',
       content: 'Get your Spring Gala 2026 tickets before they sell out! Members get a special discount.',
       audience: 'PUBLIC'
@@ -301,7 +279,6 @@ async function main() {
   console.log('--- Demo Login Credentials ---');
   console.log('President  : president@skyline.test  / admin123');
   console.log('Treasurer  : treasurer@skyline.test  / treasurer123');
-  console.log('VP Events  : vp.events@skyline.test  / vpevents123');
   console.log('Volunteer  : volunteer@skyline.test   / volunteer123');
   console.log('Member     : member1@skyline.test     / member123');
   console.log('Expired    : expired@skyline.test     / expired123');

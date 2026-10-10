@@ -86,7 +86,7 @@ exports.createTask = asyncHandler(async (req, res) => {
 
   // Assignee must hold VOLUNTEER or higher
   const assigneeEffective = await getEffectiveRole(assigneeId);
-  const eligible = ['VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'].includes(assigneeEffective.role);
+  const eligible = ['VOLUNTEER', 'TREASURER', 'PRESIDENT'].includes(assigneeEffective.role);
   if (!eligible) {
     throw badRequest('INELIGIBLE_ASSIGNEE', 'Assignee must hold VOLUNTEER or higher office');
   }
@@ -159,7 +159,7 @@ exports.updateTaskStatus = asyncHandler(async (req, res) => {
   if (!task) throw notFound('TASK_NOT_FOUND', 'Task not found');
 
   const role = req.effective?.role;
-  const isOfficer = ['VP_EVENTS', 'PRESIDENT'].includes(role);
+  const isOfficer = ['PRESIDENT'].includes(role);
   if (!isOfficer && task.assigneeId !== req.user.id) {
     throw forbidden('FORBIDDEN', 'Volunteers can only update the status of their own tasks');
   }

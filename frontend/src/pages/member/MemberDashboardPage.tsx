@@ -14,10 +14,13 @@ export default function MemberDashboardPage() {
     getDemoUser().then(setUser);
   }, []);
 
-  const memberStatus = user?.status || "ACTIVE";
-  const memberCode = "SKY-2026-9041";
+  const isGuest = user?.role === "GUEST";
+  const memberStatus = user?.status || (isGuest ? "GUEST" : "ACTIVE");
+  const memberCode = isGuest 
+    ? (user?.id ? `GST-${user.id.slice(-6).toUpperCase()}` : "GST-VISITOR") 
+    : "SKY-2026-9041";
   const expiryDate = "October 31, 2027";
-  const tier = user?.tier || "PREMIUM";
+  const tier = user?.tier || (isGuest ? "NONE" : "PREMIUM");
 
   const upcomingTickets = [
     {
@@ -38,53 +41,89 @@ export default function MemberDashboardPage() {
 
   return (
     <DashboardLayout
-      role="MEMBER"
-      breadcrumb={[{ label: "Member Hub" }]}
-      title="Member Operations Hub"
-      subtitle="Digital membership status, upcoming event passes, and campus perks."
+      role={isGuest ? "GUEST" : "MEMBER"}
+      breadcrumb={[{ label: isGuest ? "Guest Hub" : "Member Hub" }]}
+      title={isGuest ? "Guest Visitor Hub" : "Member Operations Hub"}
+      subtitle={
+        isGuest
+          ? "Browse campus events, purchase guest passes, and order official merchandise."
+          : "Digital membership status, upcoming event passes, and campus perks."
+      }
     >
       {/* Top Banner Card */}
-      <div className="bg-gradient-to-r from-[#4A1942] to-[#2E0F29] rounded-3xl p-6 sm:p-8 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div className={`rounded-3xl p-6 sm:p-8 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 ${
+        isGuest 
+          ? "bg-gradient-to-r from-slate-800 via-slate-900 to-[#017E84]/80" 
+          : "bg-gradient-to-r from-[#4A1942] to-[#2E0F29]"
+      }`}>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-              memberStatus === "ACTIVE" ? "bg-emerald-400 text-emerald-950" : "bg-red-400 text-red-950"
+              isGuest
+                ? "bg-slate-700 text-slate-200 border border-slate-600"
+                : memberStatus === "ACTIVE" 
+                  ? "bg-emerald-400 text-emerald-950" 
+                  : "bg-red-400 text-red-950"
             }`}>
-              {memberStatus} Member
+              {isGuest ? "Guest Visitor" : `${memberStatus} Member`}
             </span>
-            <span className="text-xs text-purple-200">ID: {memberCode}</span>
+            <span className="text-xs text-slate-300">ID: {memberCode}</span>
           </div>
-          <h2 className="text-2xl font-black tracking-tight">{user?.name || "Student Member"}</h2>
-          <p className="text-xs text-purple-200">
-            {tier === "PREMIUM" ? "Executive Premium Tier" : "Standard Basic Tier"} • Valid until {expiryDate}
+          <h2 className="text-2xl font-black tracking-tight">{user?.name || (isGuest ? "Guest Explorer" : "Student Member")}</h2>
+          <p className="text-xs text-slate-300">
+            {isGuest 
+              ? "Standard non-member pricing • Purchase tickets & merchandise without annual dues"
+              : `${tier === "PREMIUM" ? "Executive Premium Tier" : "Standard Basic Tier"} • Valid until ${expiryDate}`
+            }
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            to="/me/card"
-            className="px-4 py-2.5 rounded-xl bg-white text-[#4A1942] font-bold text-xs hover:bg-gray-100 transition-colors flex items-center gap-2 shadow-sm"
+            to="/shop"
+            className="px-4 py-2.5 rounded-xl bg-white text-gray-900 font-bold text-xs hover:bg-gray-100 transition-colors flex items-center gap-2 shadow-sm"
           >
-            <QrCode className="w-4 h-4 text-[#017E84]" />
-            <span>Open Digital Card</span>
+            <ShoppingBag className="w-4 h-4 text-[#017E84]" />
+            <span>Buy Merchandise</span>
           </Link>
           <Link
-            to="/shop"
+            to="/events"
             className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-colors flex items-center gap-2"
           >
-            <Tag className="w-4 h-4" />
-            <span>Member Shop (20% Off)</span>
+            <Calendar className="w-4 h-4" />
+            <span>Browse Events</span>
           </Link>
+          {isGuest && (
+            <Link
+              to="/membership"
+              className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold text-xs transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Join as Member (Save 20%)</span>
+            </Link>
+          )}
         </div>
       </div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Membership Tier", value: tier, icon: ShieldCheck, color: "text-purple-600", bg: "bg-purple-50" },
+          { 
+            label: "Account Tier", 
+            value: isGuest ? "Visitor" : tier, 
+            icon: ShieldCheck, 
+            color: isGuest ? "text-slate-600" : "text-purple-600", 
+            bg: isGuest ? "bg-slate-100" : "bg-purple-50" 
+          },
           { label: "Valid Event Passes", value: "2", icon: Ticket, color: "text-teal-600", bg: "bg-teal-50" },
-          { label: "Merch Orders", value: "3", icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Expiry Countdown", value: "340 Days", icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+          { label: "Merch Orders", value: isGuest ? "1" : "3", icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-50" },
+          { 
+            label: isGuest ? "Member Discount" : "Expiry Countdown", 
+            value: isGuest ? "0%" : "340 Days", 
+            icon: Clock, 
+            color: "text-amber-600", 
+            bg: "bg-amber-50" 
+          },
         ].map((s) => {
           const Icon = s.icon;
           return (

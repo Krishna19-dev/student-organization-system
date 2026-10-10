@@ -8,7 +8,7 @@ router.get('/card', requireAuth, requireActiveMember, membershipsController.myCa
 router.get(
   '/verify/:qrToken',
   requireAuth,
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'PRESIDENT'),
   membershipsController.verifyMember
 );
 

@@ -9,7 +9,7 @@ router.get('/mine', requireAuth, ticketsController.myTickets);
 router.post(
   '/checkin',
   requireAuth,
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'PRESIDENT'),
   ticketsController.checkIn
 );
 

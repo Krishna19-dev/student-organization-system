@@ -22,8 +22,8 @@ router.post('/verify-payment', requireAuth, shopController.verifyOrderPayment);
 router.get('/orders/mine', requireAuth, shopController.myOrders);
 router.get('/mine', requireAuth, shopController.myOrders);
 
-router.patch('/orders/:id/collect', requireAuth, requireRole('VP_EVENTS', 'PRESIDENT'), shopController.collectOrder);
-router.patch('/:id/collect', requireAuth, requireRole('VP_EVENTS', 'PRESIDENT'), shopController.collectOrder);
+router.patch('/orders/:id/collect', requireAuth, requireRole('PRESIDENT'), shopController.collectOrder);
+router.patch('/:id/collect', requireAuth, requireRole('PRESIDENT'), shopController.collectOrder);
 
 // Admin order list
 router.get('/admin/orders', requireAuth, requireRole('PRESIDENT'), shopController.adminOrders);

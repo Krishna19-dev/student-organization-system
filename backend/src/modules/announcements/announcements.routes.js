@@ -8,13 +8,13 @@ router.get('/', optionalAuth, announcementsController.listAnnouncements);
 router.post(
   '/',
   requireAuth,
-  requireRole('VP_EVENTS', 'PRESIDENT'),
+  requireRole('PRESIDENT'),
   announcementsController.createAnnouncement
 );
 router.patch(
   '/:id',
   requireAuth,
-  requireRole('VP_EVENTS', 'PRESIDENT'),
+  requireRole('PRESIDENT'),
   announcementsController.updateAnnouncement
 );
 

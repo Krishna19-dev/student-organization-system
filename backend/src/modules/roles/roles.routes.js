@@ -6,7 +6,7 @@ const { requireRole } = require('../../middleware/roles');
 
 router.use(requireAuth);
 
-router.post('/election', requireRole('PRESIDENT'), rolesController.electOfficer);
+// Election route removed
 router.get('/', requireRole('PRESIDENT'), rolesController.getRoles);
 
 module.exports = router;

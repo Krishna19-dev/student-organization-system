@@ -14,7 +14,7 @@ exports.writeNote = asyncHandler(async (req, res) => {
     targetRole = role || 'PRESIDENT';
   }
 
-  if (!['VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'].includes(targetRole)) {
+  if (!['VOLUNTEER', 'TREASURER', 'PRESIDENT'].includes(targetRole)) {
     throw badRequest('INVALID_ROLE', 'A valid office role is required for handover notes');
   }
 
@@ -40,7 +40,7 @@ exports.readNotes = asyncHandler(async (req, res) => {
 
   if (userRole === 'PRESIDENT') {
     if (requestedRole) where.role = requestedRole;
-  } else if (['VP_EVENTS', 'TREASURER'].includes(userRole)) {
+  } else if (['TREASURER'].includes(userRole)) {
     // VP and Treasurer can only read notes for their own office
     where.role = userRole;
   } else {

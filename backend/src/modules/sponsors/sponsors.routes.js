@@ -10,20 +10,20 @@ router.use(requireAuth);
 // Overdue deliverables (placed before /:id)
 router.get(
   '/overdue',
-  requireRole('VP_EVENTS', 'PRESIDENT'),
+  requireRole('PRESIDENT'),
   sponsorsController.overdue
 );
 
 // Deliverables completion
 router.patch(
   '/deliverables/:id/complete',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'PRESIDENT'),
   uploadProof,
   sponsorsController.completeDeliverable
 );
 router.patch(
   '/:id/complete',
-  requireRole('VOLUNTEER', 'VP_EVENTS', 'PRESIDENT'),
+  requireRole('VOLUNTEER', 'PRESIDENT'),
   uploadProof,
   sponsorsController.completeDeliverable
 );

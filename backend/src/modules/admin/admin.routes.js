@@ -24,8 +24,7 @@ router.get('/members', adminController.listMembers);
 router.get('/orders', adminController.adminOrders);
 
 // Elections & Roles
-router.post('/election', adminController.elect);
-router.get('/roles', adminController.listRoles);
+// router.get('/roles', adminController.listRoles);
 
 // Audit
 router.get('/audit', adminController.auditLog);

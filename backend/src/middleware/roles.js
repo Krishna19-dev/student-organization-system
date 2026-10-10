@@ -36,7 +36,7 @@ const requireActiveMember = async (req, res, next) => {
       req.effective = await getEffectiveRole(req.user.id);
     }
 
-    const memberRoles = ['MEMBER', 'VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'];
+    const memberRoles = ['MEMBER', 'VOLUNTEER', 'TREASURER', 'PRESIDENT'];
     if (memberRoles.includes(req.effective.role) && req.effective.status === 'ACTIVE') {
       return next();
     }

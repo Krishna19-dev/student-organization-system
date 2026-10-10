@@ -1,12 +1,12 @@
-const electionService = require('../../services/election.service');
-const asyncHandler = require('../../lib/asyncHandler');
-
-exports.electOfficer = asyncHandler(async (req, res) => {
-  const result = await electionService.electOfficer(req.user.id, req.body);
-  res.json({ message: 'Officer elected successfully', assignment: result });
-});
-
-exports.getRoles = asyncHandler(async (req, res) => {
-  const assignments = await electionService.listRoleAssignments();
-  res.json(assignments);
-});
+// Role controller - election logic removed
+// Placeholder implementations
+module.exports = {
+  // Returns not implemented for election
+  electOfficer: (req, res) => {
+    res.status(501).json({ message: 'Election functionality removed.' });
+  },
+  // Returns empty role list
+  getRoles: (req, res) => {
+    res.json([]);
+  },
+};

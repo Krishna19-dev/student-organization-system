@@ -8,13 +8,13 @@ router.use(requireAuth);
 
 router.post(
   '/',
-  requireRole('VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('TREASURER', 'PRESIDENT'),
   handoverController.writeNote
 );
 
 router.get(
   '/',
-  requireRole('VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  requireRole('TREASURER', 'PRESIDENT'),
   handoverController.readNotes
 );
 
