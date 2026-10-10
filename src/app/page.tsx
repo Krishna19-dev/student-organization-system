@@ -21,9 +21,39 @@ import {
   ShieldAlert
 } from "lucide-react";
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ signedIn?: string }>;
+}) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const isGuestSignedIn = resolvedParams.signedIn === "guest";
+
   return (
     <div className="space-y-16 pb-16">
+      {/* GUEST SIGNED IN WELCOME BANNER */}
+      {isGuestSignedIn && (
+        <div className="bg-secondary-light border-b border-secondary/30 py-3.5 px-4 shadow-sm animate-in fade-in duration-300">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="badge-info text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                Guest Active
+              </span>
+              <span className="text-body font-medium">
+                Welcome! You are browsing with the <strong>Guest Demo Account</strong> (<code>guest@skyline.edu</code>). You can explore events, notices, and merchandise with guest privileges.
+              </span>
+            </div>
+            <Link
+              href="/membership"
+              className="text-secondary hover:text-secondary-hover font-bold flex items-center gap-1 shrink-0 underline decoration-secondary"
+            >
+              <span>Unlock 40% Member Discount</span>
+              <span>&rarr;</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* HERO SECTION */}
       <section className="relative overflow-hidden bg-primary-light border-b border-gray-subtle">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
