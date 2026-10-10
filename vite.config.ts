@@ -14,8 +14,6 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "./src"),
       "next/link": path.resolve(import.meta.dirname, "./src/compat/next-link.tsx"),
       "next/navigation": path.resolve(import.meta.dirname, "./src/compat/next-navigation.ts"),
-      "next/image": path.resolve(import.meta.dirname, "./src/compat/next-image.tsx"),
-      "next/headers": path.resolve(import.meta.dirname, "./src/compat/next-headers.ts"),
     },
   },
   define: {
