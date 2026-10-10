@@ -1,4 +1,7 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_BASE =
+  (typeof import.meta !== "undefined" && (import.meta.env?.VITE_API_URL || import.meta.env?.NEXT_PUBLIC_API_URL)) ||
+  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL) ||
+  "http://localhost:4000";
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}, token?: string) {
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE}${endpoint}`;

@@ -21,13 +21,9 @@ import {
   ShieldAlert
 } from "lucide-react";
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ signedIn?: string }>;
-}) {
-  const resolvedParams = searchParams ? await searchParams : {};
-  const isGuestSignedIn = resolvedParams.signedIn === "guest";
+export default function HomePage() {
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const isGuestSignedIn = searchParams?.get("signedIn") === "guest";
 
   return (
     <div className="space-y-16 pb-16">

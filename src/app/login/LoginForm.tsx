@@ -9,11 +9,7 @@ import {
   AlertCircle, 
   Copy, 
   Check, 
-  ShieldCheck, 
-  UserCheck, 
-  Wallet, 
-  Calendar, 
-  BadgeCheck 
+  ShieldCheck 
 } from "lucide-react";
 import { loginAction, loginWithAccountById } from "./actions";
 import { ALL_DEMO_ACCOUNTS } from "@/lib/demo-credentials";

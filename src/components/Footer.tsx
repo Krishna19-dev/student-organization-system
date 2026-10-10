@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { 
   Compass, 
   MapPin, 
@@ -12,6 +15,13 @@ import {
 } from "lucide-react";
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Do not render public footer inside dashboard panels
+  const DASHBOARD_PATHS = ["/admin", "/finance", "/vp", "/me", "/volunteer", "/treasurer", "/events-manager", "/member", "/guest"];
+  if (DASHBOARD_PATHS.some(p => pathname === p || pathname?.startsWith(`${p}/`))) {
+    return null;
+  }
   return (
     <footer className="bg-primary text-white border-t border-primary-hover">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
@@ -67,7 +77,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link 
-                  href="/merch" 
+                  href="/shop" 
                   className="text-primary-light hover:text-white transition-colors flex items-center gap-1.5"
                 >
                   <span>Apparel &amp; Merch Store</span>

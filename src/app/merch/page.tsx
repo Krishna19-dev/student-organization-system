@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { 
   ShoppingBag, 
   Tag, 
@@ -10,92 +11,98 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Association Merch Store | Skyline Student Association",
-  description: "Official Skyline apparel and accessories with live size-wise inventory control.",
+  title: "Official Odoo Merch Store | Skyline Student Association",
+  description: "Official limited-edition Odoo merchandise collection with live size-wise inventory control.",
 };
 
 const SAMPLE_MERCH = [
   {
-    id: "mch-1",
-    name: "Skyline Crest Fleece Hoodie (Deep Plum)",
+    id: "mch-0",
+    name: "Official Odoo Classic White Campus T-Shirt",
     category: "Apparel",
     badge: "badge-primary",
-    price: 799,
-    memberPrice: 679,
-    description: "Heavyweight 380 GSM combed cotton fleece hoodie in signature Skyline plum with embroidered metallic teal crest on chest.",
+    image: "/images/merch/odoo-tshirt.jpg",
+    price: 499,
+    memberPrice: 425,
+    description: "Premium 240 GSM 100% combed ringspun cotton crewneck tee featuring front Odoo bold logo and rear nape signature crest. Breathable, pre-shrunk daily wear fit.",
     sizes: [
-      { size: "S", stock: 12, available: true },
+      { size: "S", stock: 14, available: true },
       { size: "M", stock: 28, available: true },
-      { size: "L", stock: 18, available: true },
-      { size: "XL", stock: 6, available: true },
+      { size: "L", stock: 22, available: true },
+      { size: "XL", stock: 10, available: true },
+    ],
+    inStock: true,
+  },
+  {
+    id: "mch-1",
+    name: "Official Odoo Canvas Tote Bag",
+    category: "Gear",
+    badge: "badge-primary",
+    image: "/images/merch/odoo-tote-bag.jpg",
+    price: 399,
+    memberPrice: 339,
+    description: "Eco-friendly heavy-duty canvas tote bag featuring official embroidered Odoo signature branding. Reinforced handles with ample 18L storage capacity.",
+    sizes: [
+      { size: "One Size", stock: 35, available: true },
     ],
     inStock: true,
   },
   {
     id: "mch-2",
-    name: "Association Teal Enamel Lapel Pin",
-    category: "Accessory",
+    name: "Odoo Insulated Stainless Steel Water Bottle",
+    category: "Drinkware",
     badge: "badge-secondary",
-    price: 149,
-    memberPrice: 125,
-    description: "Die-cast zinc alloy pin with hard enamel teal coloring and gold-plated borders. Features dual butterfly clasps for jackets and backpacks.",
+    image: "/images/merch/odoo-water-bottle.jpg",
+    price: 499,
+    memberPrice: 420,
+    description: "Premium double-wall vacuum insulated stainless steel water bottle with ergonomic carry loop lid. Keeps cold for 24h and hot for 12h.",
     sizes: [
-      { size: "One Size", stock: 42, available: true },
+      { size: "750ml", stock: 24, available: true },
     ],
     inStock: true,
   },
   {
     id: "mch-3",
-    name: "Skyline Organic Heavy Canvas Tote",
-    category: "Gear",
+    name: "Odoo Classic Structured Campus Cap",
+    category: "Headwear",
     badge: "badge-info",
+    image: "/images/merch/odoo-cap.jpg",
     price: 349,
     memberPrice: 295,
-    description: "Reinforced 12oz natural cotton canvas tote with 20L carrying volume, interior phone sleeve, and silk-screened association compass emblem.",
+    description: "Clean minimalist 6-panel structured cotton twill cap with embroidered Odoo crest, breathable eyelets, and adjustable brass buckle strap.",
     sizes: [
-      { size: "Standard", stock: 35, available: true },
+      { size: "Adjustable", stock: 40, available: true },
     ],
     inStock: true,
   },
   {
     id: "mch-4",
-    name: "Skyline Member Crewneck Sweatshirt (Heather)",
-    category: "Apparel",
-    badge: "badge-primary",
-    price: 649,
-    memberPrice: 550,
-    description: "Classic relaxed-fit crewneck sweatshirt featuring ribbed collar, cuffs, and subtle minimal logo print on left wrist.",
+    name: "Odoo Executive Hardcover Notebook & Pen Gift Set",
+    category: "Stationery",
+    badge: "badge-warning",
+    image: "/images/merch/odoo-notebook-pen-set.jpg",
+    price: 549,
+    memberPrice: 465,
+    description: "Matte black debossed leatherette A5 notebook with signature magenta ribbon bookmark and pen loop, bundled with premium dual rollerball pens in presentation box.",
     sizes: [
-      { size: "S", stock: 4, available: true },
-      { size: "M", stock: 14, available: true },
-      { size: "L", stock: 0, available: false },
-      { size: "XL", stock: 8, available: true },
+      { size: "Set", stock: 18, available: true },
     ],
     inStock: true,
   },
   {
     id: "mch-5",
-    name: "Thermal Stainless Steel Water Bottle (750ml)",
-    category: "Gear",
-    badge: "badge-info",
-    price: 499,
-    memberPrice: 420,
-    description: "Double-walled vacuum insulated bottle in matte finish. Keeps beverages cold for 24 hours or hot for 12 hours.",
+    name: "Odoo Signature Colorblock Campus Sneakers",
+    category: "Footwear",
+    badge: "badge-primary",
+    image: "/images/merch/odoo-sneakers.jpg",
+    price: 1499,
+    memberPrice: 1275,
+    description: "Limited collector-edition low-top canvas skate sneakers with custom suede purple accents, emerald toe cap, and vulcanized rubber sole.",
     sizes: [
-      { size: "750ml", stock: 22, available: true },
-    ],
-    inStock: true,
-  },
-  {
-    id: "mch-6",
-    name: "Skyline Sticker Pack & Notebook Bundle",
-    category: "Stationery",
-    badge: "badge-warning",
-    price: 199,
-    memberPrice: 169,
-    description: "A5 dot-grid hardcover journal paired with 6 die-cut vinyl waterproof stickers celebrating student life and code.",
-    sizes: [
-      { size: "Bundle", stock: 50, available: true },
+      { size: "UK 7", stock: 6, available: true },
+      { size: "UK 8", stock: 12, available: true },
+      { size: "UK 9", stock: 10, available: true },
+      { size: "UK 10", stock: 4, available: true },
     ],
     inStock: true,
   },
@@ -109,14 +116,14 @@ export default function MerchPage() {
         <div className="space-y-3 max-w-2xl">
           <div className="inline-flex items-center gap-1.5 badge-primary px-3 py-1 rounded-full text-xs font-semibold">
             <ShoppingBag className="w-3.5 h-3.5 text-primary" />
-            <span>Association Merch Store</span>
+            <span>Official Odoo Collection</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-body tracking-tight">
-            Official Campus Apparel &amp; Gear
+            Official Odoo Campus Merchandise
           </h1>
           <p className="text-sm sm:text-base text-muted leading-relaxed">
-            Represent your student association with premium merchandise. Every order is 
-            tracked with atomic size-wise inventory locks and integer ledger accounting.
+            Exclusive Odoo branded merchandise for Skyline Student Association members. 
+            All proceeds support tech events, workshops, and student developer initiatives.
           </p>
         </div>
 
@@ -126,7 +133,7 @@ export default function MerchPage() {
             className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-secondary hover:bg-secondary-hover text-white text-sm font-semibold shadow-sm transition-colors"
           >
             <Tag className="w-4 h-4" />
-            <span>Premium 15% Discount</span>
+            <span>Member 15% Discount</span>
           </Link>
         </div>
       </div>
@@ -137,7 +144,7 @@ export default function MerchPage() {
           <PackageCheck className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
           <div className="text-xs">
             <span className="font-bold text-body block mb-0.5">Size-Wise Stock Control</span>
-            <span className="text-muted">Exact quantities maintained per size. Zero overselling.</span>
+            <span className="text-muted">Exact quantities maintained per item. Zero overselling.</span>
           </div>
         </div>
 
@@ -145,7 +152,7 @@ export default function MerchPage() {
           <ShieldCheck className="w-5 h-5 text-status-success shrink-0 mt-0.5" />
           <div className="text-xs">
             <span className="font-bold text-body block mb-0.5">Transparent Single Ledger</span>
-            <span className="text-muted">All proceeds fund student scholarships and workshops.</span>
+            <span className="text-muted">All proceeds fund student hackathons and workshops.</span>
           </div>
         </div>
 
@@ -163,30 +170,38 @@ export default function MerchPage() {
         {SAMPLE_MERCH.map((item) => (
           <div
             key={item.id}
-            className="bg-surface rounded-2xl border border-gray-subtle shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between"
+            className="bg-surface rounded-2xl border border-gray-subtle shadow-xs hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between"
           >
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className={`${item.badge} text-xs font-semibold px-2.5 py-0.5 rounded-full`}>
-                  {item.category}
-                </span>
-                <span className="badge-success text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                  Available
-                </span>
-              </div>
+            {/* Product Image */}
+            <div className="relative w-full h-64 bg-page border-b border-gray-subtle overflow-hidden flex items-center justify-center p-4">
+              <Image
+                src={item.image}
+                alt={item.name}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-contain p-2 hover:scale-105 transition-transform duration-300"
+              />
+              <span className={`absolute top-3 left-3 ${item.badge} text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-xs`}>
+                {item.category}
+              </span>
+              <span className="absolute top-3 right-3 badge-success text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-xs">
+                In Stock
+              </span>
+            </div>
 
-              <h3 className="text-lg font-bold text-body">
+            <div className="p-6 space-y-4">
+              <h3 className="text-base font-bold text-body leading-snug">
                 {item.name}
               </h3>
 
-              <p className="text-xs sm:text-sm text-muted leading-relaxed line-clamp-3">
+              <p className="text-xs sm:text-sm text-muted leading-relaxed line-clamp-2">
                 {item.description}
               </p>
 
               {/* Size Stocks Showcase */}
               <div className="space-y-1.5 pt-2 border-t border-gray-subtle">
                 <span className="text-[11px] font-semibold text-muted block uppercase tracking-wider">
-                  Live Stock by Size:
+                  Live Stock by Variant:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {item.sizes.map((s) => (
@@ -211,19 +226,19 @@ export default function MerchPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-[11px] text-muted block">Standard Price</span>
-                  <span className="text-xl font-bold text-body">₹{item.price}</span>
+                  <span className="text-xl font-bold text-body font-mono">₹{item.price}</span>
                 </div>
                 <div className="text-right">
                   <span className="text-[11px] text-primary font-medium block">Member Price</span>
-                  <span className="text-sm font-bold text-status-success-dark">₹{item.memberPrice}</span>
+                  <span className="text-sm font-bold text-status-success-dark font-mono">₹{item.memberPrice}</span>
                 </div>
               </div>
 
               <Link
                 href="/login"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-sm transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-colors"
               >
-                <span>Select Size &amp; Order</span>
+                <span>Select &amp; Order</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

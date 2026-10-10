@@ -47,12 +47,14 @@
 
 :root {
   color-scheme: light;
+  --font-geist-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-geist-mono: 'Geist Mono', monospace;
 }
 
 body {
   background-color: #FAF7F9;
   color: #2B2B2B;
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-geist-sans);
   min-height: 100vh;
 }
 

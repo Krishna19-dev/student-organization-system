@@ -1,6 +1,3 @@
-"use server";
-
-import { redirect } from "next/navigation";
 import { setDemoUser, clearDemoUser } from "@/lib/auth-demo";
 import { ALL_DEMO_ACCOUNTS, GUEST_DEMO_CREDENTIALS } from "@/lib/demo-credentials";
 
@@ -9,7 +6,7 @@ export interface LoginActionResult {
   error?: string;
 }
 
-export async function loginWithAccountById(accountId: string): Promise<never> {
+export async function loginWithAccountById(accountId: string): Promise<void> {
   const account = ALL_DEMO_ACCOUNTS.find((a) => a.id === accountId) || GUEST_DEMO_CREDENTIALS;
 
   try {
@@ -35,13 +32,11 @@ export async function loginWithAccountById(accountId: string): Promise<never> {
         },
         data.token
       );
-      redirect(data.dashboard || account.dashboard);
+      window.location.href = data.dashboard || account.dashboard;
+      return;
     }
-  } catch (err: unknown) {
-    // If redirect happens in Next.js, rethrow it
-    if (err && typeof err === "object" && "digest" in err && typeof (err as { digest: string }).digest === "string" && (err as { digest: string }).digest.startsWith("NEXT_REDIRECT")) {
-      throw err;
-    }
+  } catch {
+    // Fallback direct demo session below
   }
 
   // Fallback direct demo session
@@ -52,17 +47,17 @@ export async function loginWithAccountById(accountId: string): Promise<never> {
     dashboard: account.dashboard,
   });
 
-  redirect(account.dashboard);
+  window.location.href = account.dashboard;
 }
 
-export async function loginWithGuestDemo(): Promise<never> {
+export async function loginWithGuestDemo(): Promise<void> {
   return loginWithAccountById("guest");
 }
 
 export async function loginAction(
   prevState: LoginActionResult | null,
   formData: FormData
-): Promise<LoginActionResult | never> {
+): Promise<LoginActionResult> {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
 
@@ -93,17 +88,16 @@ export async function loginAction(
         },
         data.token
       );
-      redirect(data.dashboard || "/");
+      window.location.href = data.dashboard || "/";
+      return { success: true };
     }
 
     const errorData = await res.json().catch(() => null);
     if (errorData?.error?.message) {
       return { error: errorData.error.message };
     }
-  } catch (err: unknown) {
-    if (err && typeof err === "object" && "digest" in err && typeof (err as { digest: string }).digest === "string" && (err as { digest: string }).digest.startsWith("NEXT_REDIRECT")) {
-      throw err;
-    }
+  } catch {
+    // Fallback to checking local demo credentials
   }
 
   // Check demo credentials matching
@@ -118,7 +112,8 @@ export async function loginAction(
       role: matchingDemo.role,
       dashboard: matchingDemo.dashboard,
     });
-    redirect(matchingDemo.dashboard);
+    window.location.href = matchingDemo.dashboard;
+    return { success: true };
   }
 
   return {
@@ -126,7 +121,7 @@ export async function loginAction(
   };
 }
 
-export async function logoutAction(): Promise<never> {
+export async function logoutAction(): Promise<void> {
   await clearDemoUser();
-  redirect("/login?loggedOut=true");
+  window.location.href = "/login?loggedOut=true";
 }

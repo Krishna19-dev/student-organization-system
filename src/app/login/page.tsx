@@ -8,13 +8,9 @@ export const metadata = {
   description: "Sign into the Skyline Student Association member & officer operations portal with Guest demo account.",
 };
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ loggedOut?: string }>;
-}) {
-  const resolvedParams = searchParams ? await searchParams : {};
-  const isLoggedOut = resolvedParams.loggedOut === "true";
+export default function LoginPage() {
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const isLoggedOut = searchParams?.get("loggedOut") === "true";
 
   return (
     <div className="max-w-md mx-auto px-4 py-12 sm:py-16 space-y-6">

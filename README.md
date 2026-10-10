@@ -3,8 +3,8 @@
 A unified student organization management platform for memberships, events, ticketing, merchandise, volunteer coordination, and single-ledger financial tracking. Built for the 24-hour hackathon.
 
 ## Tech Stack
-- **Framework**: Next.js 15 (App Router) + React 19 + TypeScript (Strict)
-- **Styling**: Tailwind CSS + Custom Brand Tokens (`#714B67` Plum & `#017E84` Teal) + Lucide Icons
+- **Framework**: React 19 + Vite 6 + React Router 7 + TypeScript (Strict)
+- **Styling**: Tailwind CSS v4 + Custom Brand Tokens (`#714B67` Plum & `#017E84` Teal) + Lucide Icons
 - **Database & ORM**: Neon Serverless PostgreSQL + Prisma ORM 6.x
 - **Authentication**: JWT Sessions (`jose`) + `bcryptjs`
 - **Validation**: Server-side Zod

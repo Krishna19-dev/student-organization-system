@@ -2,7 +2,7 @@ export interface DemoUser {
   id?: string;
   name: string;
   email: string;
-  role: "PRESIDENT" | "TREASURER" | "VP_EVENTS" | "VOLUNTEER" | "MEMBER" | "GUEST";
+  role: "PRESIDENT" | "TREASURER" | "VOLUNTEER" | "MEMBER" | "GUEST";
   status?: string;
   positionTitle?: string | null;
   token?: string;
@@ -33,7 +33,7 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
     name: "Arjun Mehta",
     role: "PRESIDENT",
     dashboard: "/admin",
-    description: "Full association control: approvals, elections, members list, orders, and system audit logs.",
+    description: "Full association control: approvals, events, members, fundraisers, orders, and system audit logs.",
   },
   {
     id: "treasurer",
@@ -44,20 +44,8 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
     password: "treasurer123",
     name: "Priya Sharma",
     role: "TREASURER",
-    dashboard: "/treasurer",
+    dashboard: "/finance",
     description: "Club P&L dashboard, expense claim approvals & payouts, fundraiser takings, and CSV ledger export.",
-  },
-  {
-    id: "vp_events",
-    roleName: "VP of Events",
-    badge: "EVENTS & CAMPAIGNS",
-    badgeColor: "bg-blue-500/20 text-blue-700 border-blue-400",
-    email: "vp.events@skyline.test",
-    password: "vpevents123",
-    name: "Rohan Varma",
-    role: "VP_EVENTS",
-    dashboard: "/events-manager",
-    description: "Create/edit campus events, seat capacity monitoring, attendance reports, and fundraisers.",
   },
   {
     id: "volunteer",
@@ -80,7 +68,7 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
     password: "member123",
     name: "Dev Patel",
     role: "MEMBER",
-    dashboard: "/member",
+    dashboard: "/me",
     description: "Digital membership card with QR token, member merch discounts, and registered event passes.",
   },
   {
@@ -104,7 +92,7 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
     password: "guest123",
     name: "Demo Guest Explorer",
     role: "GUEST",
-    dashboard: "/guest",
+    dashboard: "/me",
     description: "Public event ticket purchases and merchandise ordering at standard non-member rates.",
   },
 ];
@@ -112,3 +100,4 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
 export const GUEST_DEMO_CREDENTIALS = ALL_DEMO_ACCOUNTS[6];
 export const DEMO_COOKIE_NAME = "skyline_demo_user";
 export const AUTH_TOKEN_COOKIE = "token";
+
