@@ -1,0 +1,422 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+}
+
+enum ApplicationType {
+  MEMBER
+  LEAD
+}
+
+enum ApplicationStatus {
+  PAYMENT_PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum DesiredPosition {
+  NONE
+  TECHNICAL_LEAD
+  OPERATIONS_LEAD
+  EVENT_LEAD
+  COORDINATOR
+}
+
+enum MembershipTier {
+  BASIC
+  PREMIUM
+}
+
+enum SystemRole {
+  VOLUNTEER
+  VP_EVENTS
+  TREASURER
+  PRESIDENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum SponsorStage {
+  LEAD
+  CONTACTED
+  COMMITTED
+  FULFILLED
+}
+
+enum DeliverableStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum PaymentPurpose {
+  DUES
+  TICKETS
+  MERCH
+}
+
+enum LedgerType {
+  INCOME
+  EXPENSE
+}
+
+enum LedgerCategory {
+  DUES
+  TICKETS
+  MERCH
+  SPONSORSHIP
+  FUNDRAISER
+  EXPENSE
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  INVALID
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  COLLECTED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships       Membership[]
+  applications      Application[]    @relation("ApplicationUser")
+  applicationsReviewed Application[] @relation("ApplicationReviewer")
+  roleAssignments   RoleAssignment[]
+  payments          Payment[]
+  orders            Order[]
+  tickets           Ticket[]
+  announcements     Announcement[]
+  tasks             Task[]
+  expenseClaims     ExpenseClaim[]
+  handoverNotes     HandoverNote[]   @relation("HandoverAuthor")
+  auditLogs         AuditLog[]
+}
+
+model MembershipPlan {
+  id            String   @id @default(cuid())
+  tier          MembershipTier @unique
+  price         Int      // in paise
+  merchDiscount Float    // percentage
+  memberships   Membership[]
+}
+
+model Membership {
+  id               String           @id @default(cuid())
+  userId           String
+  membershipPlanId String
+  status           MembershipStatus @default(PENDING)
+  startDate        DateTime?
+  expiryDate       DateTime?
+  memberCode       String?          @unique
+  qrToken          String?          @unique
+  createdAt        DateTime         @default(now())
+
+  user           User           @relation(fields: [userId], references: [id])
+  membershipPlan MembershipPlan @relation(fields: [membershipPlanId], references: [id])
+}
+
+model Application {
+  id               String            @id @default(cuid())
+  userId           String
+  type             ApplicationType
+  desiredPosition  DesiredPosition   @default(NONE)
+  tier             MembershipTier
+  skills           String
+  notes            String?
+  status           ApplicationStatus @default(PAYMENT_PENDING)
+  paymentId        String?           @unique
+  reviewerId       String?
+  reviewNote       String?
+  assignedPosition String?
+  submittedAt      DateTime?
+  reviewedAt       DateTime?
+  createdAt        DateTime          @default(now())
+
+  user     User     @relation("ApplicationUser", fields: [userId], references: [id])
+  reviewer User?    @relation("ApplicationReviewer", fields: [reviewerId], references: [id])
+  payment  Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([status, submittedAt])
+  @@index([userId])
+}
+
+model RoleAssignment {
+  id            String     @id @default(cuid())
+  userId        String
+  role          SystemRole
+  positionTitle String?
+  startDate     DateTime   @default(now())
+  endDate       DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id         String         @id @default(cuid())
+  userId     String
+  orderId    String?        // Razorpay order id
+  paymentId  String?        // Razorpay payment id
+  signature  String?        // Razorpay signature
+  amount     Int            // in paise
+  purpose    PaymentPurpose
+  status     PaymentStatus  @default(CREATED)
+  refundedAt DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  application Application?
+  order       Order?
+  ledgerEntry LedgerEntry?
+  tickets     Ticket[]
+}
+
+model Event {
+  id           String   @id @default(cuid())
+  title        String
+  venue        String
+  date         DateTime
+  totalSeats   Int
+  seatsSold    Int      @default(0)
+  memberPrice  Int      // in paise
+  guestPrice   Int      // in paise
+  createdAt    DateTime @default(now())
+
+  tickets       Ticket[]
+  tasks         Task[]
+  expenseClaims ExpenseClaim[]
+  ledgerEntries LedgerEntry[]
+  contributions Contribution[]
+}
+
+model Ticket {
+  id        String       @id @default(cuid())
+  eventId   String
+  userId    String
+  paymentId String
+  qrToken   String       @unique
+  status    TicketStatus @default(VALID)
+  createdAt DateTime     @default(now())
+
+  event   Event   @relation(fields: [eventId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  payment Payment @relation(fields: [paymentId], references: [id])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  basePrice   Int      // in paise
+  createdAt   DateTime @default(now())
+
+  variants ProductVariant[]
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  size      String
+  stock     Int      @default(0) // constraint: stock >= 0
+
+  product Product @relation(fields: [productId], references: [id])
+  items   OrderItem[]
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  paymentId String?     @unique
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+
+  user    User        @relation(fields: [userId], references: [id])
+  payment Payment?    @relation(fields: [paymentId], references: [id])
+  items   OrderItem[]
+}
+
+model OrderItem {
+  id               String @id @default(cuid())
+  orderId          String
+  productVariantId String
+  quantity         Int
+
+  order          Order          @relation(fields: [orderId], references: [id])
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  authorId  String
+  title     String
+  content   String
+  audience  String   // 'PUBLIC' or 'MEMBERS'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author User @relation(fields: [authorId], references: [id])
+}
+
+model Fundraiser {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  target      Int      // in paise
+  createdAt   DateTime @default(now())
+
+  tasks         Task[]
+  ledgerEntries LedgerEntry[]
+}
+
+model Task {
+  id            String     @id @default(cuid())
+  title         String
+  assigneeId    String
+  dueDate       DateTime?
+  status        TaskStatus @default(TODO)
+  eventId       String?
+  fundraiserId  String?
+  deliverableId String?    @unique
+  createdAt     DateTime   @default(now())
+
+  assignee    User         @relation(fields: [assigneeId], references: [id])
+  event       Event?       @relation(fields: [eventId], references: [id])
+  fundraiser  Fundraiser?  @relation(fields: [fundraiserId], references: [id])
+  deliverable Deliverable? @relation(fields: [deliverableId], references: [id])
+}
+
+model ExpenseClaim {
+  id          String        @id @default(cuid())
+  userId      String
+  amount      Int           // in paise
+  description String
+  eventId     String?
+  receiptUrl  String?
+  status      ExpenseStatus @default(PENDING)
+  reason      String?
+  createdAt   DateTime      @default(now())
+
+  user        User         @relation(fields: [userId], references: [id])
+  event       Event?       @relation(fields: [eventId], references: [id])
+  ledgerEntry LedgerEntry?
+}
+
+model LedgerEntry {
+  id             String         @id @default(cuid())
+  type           LedgerType
+  category       LedgerCategory
+  amount         Int            // in paise, constraint: amount > 0
+  description    String?
+  paymentId      String?        @unique
+  expenseClaimId String?        @unique
+  contributionId String?        @unique
+  eventId        String?
+  fundraiserId   String?
+  createdById    String?
+  createdAt      DateTime       @default(now())
+
+  payment      Payment?      @relation(fields: [paymentId], references: [id])
+  expenseClaim ExpenseClaim? @relation(fields: [expenseClaimId], references: [id])
+  contribution Contribution? @relation(fields: [contributionId], references: [id])
+  event        Event?        @relation(fields: [eventId], references: [id])
+  fundraiser   Fundraiser?   @relation(fields: [fundraiserId], references: [id])
+}
+
+model Sponsor {
+  id      String       @id @default(cuid())
+  name    String
+  contact String?
+  stage   SponsorStage @default(LEAD)
+
+  contributions Contribution[]
+  deliverables  Deliverable[]
+}
+
+model Contribution {
+  id          String   @id @default(cuid())
+  sponsorId   String
+  isCash      Boolean
+  amount      Int?     // in paise if cash, estimated value if in-kind
+  description String?
+  eventId     String?
+  createdAt   DateTime @default(now())
+
+  sponsor     Sponsor      @relation(fields: [sponsorId], references: [id])
+  event       Event?       @relation(fields: [eventId], references: [id])
+  ledgerEntry LedgerEntry?
+}
+
+model Deliverable {
+  id        String            @id @default(cuid())
+  sponsorId String
+  title     String
+  ownerId   String?
+  dueDate   DateTime?
+  status    DeliverableStatus @default(PENDING)
+  proofUrl  String?
+
+  sponsor Sponsor @relation(fields: [sponsorId], references: [id])
+  task    Task?
+}
+
+model HandoverNote {
+  id        String     @id @default(cuid())
+  authorId  String
+  role      SystemRole
+  content   String
+  createdAt DateTime   @default(now())
+
+  author User @relation("HandoverAuthor", fields: [authorId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  targetId  String?
+  target    String?
+  createdAt DateTime @default(now())
+
+  actor User @relation(fields: [actorId], references: [id])
+}

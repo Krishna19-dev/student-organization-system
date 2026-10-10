@@ -1,48 +1,38 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+frontend/node_modules/
+backend/node_modules/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Build output
+frontend/dist/
+backend/dist/
+frontend/build/
+backend/build/
 
-# testing
-/coverage
+# Environment secrets
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
 
-# next.js
-/.next/
-/out/
+# Logs and caches
+*.log
+coverage/
+.cache/
 
-# production
-/build
 
-# misc
-.DS_Store
-*.pem
+# Dependencies
+**/node_modules/
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# Build output
+**/dist/
+**/build/
 
-# env files — real secrets are ignored, example template is committed
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.production
-# Allow the example template (safe to commit, has no real secrets)
-!.env.example
+# Environment secrets
+**/.env
+**/.env.*
+!**/.env.example
 
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Logs
+*.log
