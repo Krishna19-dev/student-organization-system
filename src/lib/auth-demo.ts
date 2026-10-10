@@ -20,7 +20,7 @@ export async function setDemoUser(user: DemoUser): Promise<void> {
   cookieStore.set(DEMO_COOKIE_NAME, JSON.stringify(user), {
     path: "/",
     httpOnly: false,
-    maxAge: 60 * 60 * 24 * 7,
+    // No maxAge = session cookie: clears when browser is closed
     sameSite: "lax",
   });
 }

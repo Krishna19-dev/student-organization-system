@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { setDemoUser, clearDemoUser } from "@/lib/auth-demo";
-import { GUEST_DEMO_CREDENTIALS } from "@/lib/demo-credentials";
+import { GUEST_DEMO_CREDENTIALS, ADMIN_DEMO_CREDENTIALS } from "@/lib/demo-credentials";
 
 export interface LoginActionResult {
   success?: boolean;
@@ -15,7 +15,6 @@ export async function loginWithGuestDemo(): Promise<never> {
     email: GUEST_DEMO_CREDENTIALS.email,
     role: GUEST_DEMO_CREDENTIALS.role,
   });
-
   redirect("/?signedIn=guest");
 }
 
@@ -28,6 +27,19 @@ export async function loginAction(
 
   if (!email || !password) {
     return { error: "Please enter both email address and password." };
+  }
+
+  // Check against Admin Demo Credentials
+  if (
+    email === ADMIN_DEMO_CREDENTIALS.email &&
+    password === ADMIN_DEMO_CREDENTIALS.password
+  ) {
+    await setDemoUser({
+      name: ADMIN_DEMO_CREDENTIALS.name,
+      email: ADMIN_DEMO_CREDENTIALS.email,
+      role: ADMIN_DEMO_CREDENTIALS.role,
+    });
+    redirect("/admin");
   }
 
   // Check against Guest Demo Credentials
@@ -43,9 +55,9 @@ export async function loginAction(
     redirect("/?signedIn=guest");
   }
 
-  // If credentials don't match the guest demo
+  // If credentials don't match
   return {
-    error: `Invalid credentials. Please use the Guest Demo Account: email "${GUEST_DEMO_CREDENTIALS.email}" and password "${GUEST_DEMO_CREDENTIALS.password}".`,
+    error: `Invalid credentials. Use Guest (guest@skyline.edu / guest123) or Admin (admin@skyline.edu / admin123).`,
   };
 }
 
