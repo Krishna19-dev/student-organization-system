@@ -1,21 +1,25 @@
 const { getEffectiveRole } = require('../services/role.service');
+const { unauthorized, forbidden } = require('../lib/errors');
 
 const requireRole = (...roles) => {
   return async (req, res, next) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } });
+        return next(unauthorized('UNAUTHORIZED', 'Not authenticated'));
       }
-      
-      const { role } = await getEffectiveRole(req.user.id);
-      
-      // Admin (President) can do everything
+
+      if (!req.effective) {
+        req.effective = await getEffectiveRole(req.user.id);
+      }
+
+      const role = req.effective.role;
+
+      // President can do everything
       if (role === 'PRESIDENT' || roles.includes(role)) {
-        req.effectiveRole = role;
         return next();
       }
-      
-      return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
+
+      return next(forbidden('FORBIDDEN', `Role required: ${roles.join(', ')}`));
     } catch (error) {
       next(error);
     }
@@ -25,22 +29,25 @@ const requireRole = (...roles) => {
 const requireActiveMember = async (req, res, next) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } });
+      return next(unauthorized('UNAUTHORIZED', 'Not authenticated'));
     }
-    const { role } = await getEffectiveRole(req.user.id);
-    
-    // Any role from MEMBER up implies an active membership implicitly, EXCEPT guest/pending.
-    // However, volunteers/VP/President are technically members too. 
-    // Wait, let's just use requireRole with all upper roles.
-    if (['MEMBER', 'VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'].includes(role)) {
-      req.effectiveRole = role;
+
+    if (!req.effective) {
+      req.effective = await getEffectiveRole(req.user.id);
+    }
+
+    const memberRoles = ['MEMBER', 'VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'];
+    if (memberRoles.includes(req.effective.role) && req.effective.status === 'ACTIVE') {
       return next();
     }
-    
-    return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Active membership required' } });
+
+    return next(forbidden('FORBIDDEN', 'Active membership required'));
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { requireRole, requireActiveMember };
+module.exports = {
+  requireRole,
+  requireActiveMember,
+};

@@ -1,91 +1,77 @@
-const prisma = require('../../lib/prisma');
+const path = require('path');
+const fs = require('fs');
+const expenseService = require('../../services/expense.service');
+const { badRequest, notFound, forbidden } = require('../../lib/errors');
+const asyncHandler = require('../../lib/asyncHandler');
+const { uploadDir } = require('../../middleware/upload');
 
-exports.submitExpense = async (req, res, next) => {
-  try {
-    const { amount, description, eventId } = req.body;
-    const receiptUrl = req.file ? req.file.filename : null;
+exports.submitClaim = asyncHandler(async (req, res) => {
+  const { amount, description, eventId } = req.body;
+  const receiptFile = req.file;
 
-    const claim = await prisma.expenseClaim.create({
-      data: {
-        userId: req.user.id,
-        amount: parseInt(amount, 10),
-        description,
-        eventId: eventId || null,
-        receiptUrl
-      }
-    });
-    res.status(201).json(claim);
-  } catch (error) { next(error); }
-};
+  if (!receiptFile) {
+    throw badRequest('RECEIPT_REQUIRED', 'Receipt file attachment is required');
+  }
 
-exports.getMyExpenses = async (req, res, next) => {
-  try {
-    const claims = await prisma.expenseClaim.findMany({
-      where: { userId: req.user.id },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json(claims);
-  } catch (error) { next(error); }
-};
+  const claim = await expenseService.submitClaim(req.user.id, {
+    amount,
+    description,
+    eventId,
+    receiptUrl: receiptFile.filename,
+  });
 
-exports.getQueue = async (req, res, next) => {
-  try {
-    const claims = await prisma.expenseClaim.findMany({
-      where: { status: 'PENDING' },
-      include: { user: true }
-    });
-    res.json(claims);
-  } catch (error) { next(error); }
-};
+  res.status(201).json(claim);
+});
 
-exports.approveExpense = async (req, res, next) => {
-  try {
-    const claim = await prisma.expenseClaim.update({
-      where: { id: req.params.id },
-      data: { status: 'APPROVED' }
-    });
-    res.json(claim);
-  } catch (error) { next(error); }
-};
+exports.myClaims = asyncHandler(async (req, res) => {
+  const claims = await expenseService.getMyClaims(req.user.id);
+  res.json(claims);
+});
 
-exports.rejectExpense = async (req, res, next) => {
-  try {
-    const { reason } = req.body;
-    const claim = await prisma.expenseClaim.update({
-      where: { id: req.params.id },
-      data: { status: 'REJECTED', reason }
-    });
-    res.json(claim);
-  } catch (error) { next(error); }
-};
+exports.listClaims = asyncHandler(async (req, res) => {
+  const { status, page, pageSize } = req.query;
+  const result = await expenseService.listClaims({ status, page, pageSize });
+  res.json(result);
+});
 
-exports.payExpense = async (req, res, next) => {
-  try {
-    const claimId = req.params.id;
-    const claim = await prisma.expenseClaim.findUnique({ where: { id: claimId } });
-    if (!claim || claim.status !== 'APPROVED') {
-      return res.status(400).json({ error: { message: 'Claim not found or not approved' } });
-    }
+exports.approveClaim = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const role = req.effective?.role;
+  const claim = await expenseService.approveClaim(id, req.user.id, role);
+  res.json(claim);
+});
 
-    await prisma.$transaction(async (tx) => {
-      await tx.expenseClaim.update({
-        where: { id: claimId },
-        data: { status: 'PAID' }
-      });
+exports.rejectClaim = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const claim = await expenseService.rejectClaim(id, req.user.id, reason);
+  res.json(claim);
+});
 
-      await tx.ledgerEntry.create({
-        data: {
-          type: 'EXPENSE',
-          category: 'EXPENSE',
-          amount: claim.amount,
-          description: claim.description,
-          expenseClaimId: claim.id,
-          eventId: claim.eventId,
-          createdById: req.user.id
-        }
-      });
-    });
+exports.payClaim = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const claim = await expenseService.payClaim(id, req.user.id);
+  res.json({ message: 'Claim marked as PAID and recorded in ledger', claim });
+});
 
-    res.json({ message: 'Claim paid and recorded in ledger' });
-  } catch (error) { next(error); }
-};
+exports.getReceipt = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const claim = await expenseService.getClaimById(id);
+
+  const role = req.effective?.role;
+  const isOfficer = ['TREASURER', 'PRESIDENT'].includes(role);
+  if (!isOfficer && claim.userId !== req.user.id) {
+    throw forbidden('FORBIDDEN', 'You do not have permission to view this receipt');
+  }
+
+  if (!claim.receiptUrl) {
+    throw notFound('NO_RECEIPT', 'No receipt attached to this claim');
+  }
+
+  const filePath = path.join(uploadDir, claim.receiptUrl);
+  if (!fs.existsSync(filePath)) {
+    throw notFound('FILE_NOT_FOUND', 'Receipt file not found on disk');
+  }
+
+  res.sendFile(filePath);
+});

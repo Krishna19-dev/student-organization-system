@@ -1,55 +1,54 @@
-const prisma = require('../../lib/prisma');
+const ledgerService = require('../../services/ledger.service');
+const asyncHandler = require('../../lib/asyncHandler');
 
-exports.getSummary = async (req, res, next) => {
-  try {
-    const income = await prisma.ledgerEntry.aggregate({
-      where: { type: 'INCOME' },
-      _sum: { amount: true }
-    });
-    const expenses = await prisma.ledgerEntry.aggregate({
-      where: { type: 'EXPENSE' },
-      _sum: { amount: true }
-    });
-    
-    const totalIncome = income._sum.amount || 0;
-    const totalExpenses = expenses._sum.amount || 0;
-    
-    res.json({
-      totalIncome,
-      totalExpenses,
-      balance: totalIncome - totalExpenses
-    });
-  } catch (error) { next(error); }
-};
+exports.summary = asyncHandler(async (req, res) => {
+  const { from, to } = req.query;
+  const result = await ledgerService.summary({ from, to });
+  res.json(result);
+});
 
-exports.getBreakdown = async (req, res, next) => {
-  try {
-    const entries = await prisma.ledgerEntry.groupBy({
-      by: ['category'],
-      where: { type: 'INCOME' },
-      _sum: { amount: true }
-    });
-    res.json(entries);
-  } catch (error) { next(error); }
-};
+exports.breakdown = asyncHandler(async (req, res) => {
+  const { from, to } = req.query;
+  const result = await ledgerService.breakdown({ from, to });
+  res.json(result);
+});
 
-exports.getEventPnL = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const entries = await prisma.ledgerEntry.groupBy({
-      by: ['type'],
-      where: { eventId: id },
-      _sum: { amount: true }
-    });
-    res.json(entries);
-  } catch (error) { next(error); }
-};
+exports.eventPnl = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const result = await ledgerService.eventPnl(id);
+  res.json(result);
+});
 
-exports.getLedger = async (req, res, next) => {
-  try {
-    const ledger = await prisma.ledgerEntry.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json(ledger);
-  } catch (error) { next(error); }
-};
+exports.ledger = asyncHandler(async (req, res) => {
+  const { from, to, category, type, eventId, fundraiserId, page, pageSize } = req.query;
+  const result = await ledgerService.list({
+    from,
+    to,
+    category,
+    type,
+    eventId,
+    fundraiserId,
+    page,
+    pageSize,
+  });
+  res.json(result);
+});
+
+exports.exportCsv = asyncHandler(async (req, res) => {
+  const { from, to, category, type, eventId } = req.query;
+  const { items } = await ledgerService.list({
+    from,
+    to,
+    category,
+    type,
+    eventId,
+    page: 1,
+    pageSize: 10000,
+  });
+
+  const csv = ledgerService.toCsv(items);
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="skyline-ledger.csv"');
+  res.send(csv);
+});

@@ -2,18 +2,14 @@ const express = require('express');
 const router = express.Router();
 const eventsController = require('./events.controller');
 const { requireRole } = require('../../middleware/roles');
-const { requireAuth: authMiddleware } = require('../../middleware/auth');
+const { requireAuth, optionalAuth } = require('../../middleware/auth');
 
 router.get('/', eventsController.listEvents);
 router.get('/:id', eventsController.getEvent);
+router.post('/:id/checkout', optionalAuth, eventsController.checkout);
 
-// Protected routes
-router.use(authMiddleware);
-router.post('/', requireRole('VP_EVENTS', 'PRESIDENT'), eventsController.createEvent);
-router.patch('/:id', requireRole('VP_EVENTS', 'PRESIDENT'), eventsController.updateEvent);
-router.get('/:id/report', requireRole('VP_EVENTS', 'TREASURER', 'PRESIDENT'), eventsController.getReport);
-
-// Checkout
-router.post('/:id/checkout', eventsController.checkoutTicket);
+router.post('/', requireAuth, requireRole('VP_EVENTS', 'PRESIDENT'), eventsController.createEvent);
+router.patch('/:id', requireAuth, requireRole('VP_EVENTS', 'PRESIDENT'), eventsController.updateEvent);
+router.get('/:id/report', requireAuth, requireRole('VP_EVENTS', 'TREASURER', 'PRESIDENT'), eventsController.eventReport);
 
 module.exports = router;

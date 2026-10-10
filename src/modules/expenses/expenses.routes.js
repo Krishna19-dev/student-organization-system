@@ -1,19 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('./expenses.controller');
+const expensesController = require('./expenses.controller');
+const { requireAuth } = require('../../middleware/auth');
 const { requireRole } = require('../../middleware/roles');
-const { requireAuth: authMiddleware } = require('../../middleware/auth');
-const upload = require('../../middleware/upload');
+const { uploadReceipt } = require('../../middleware/upload');
 
-router.use(authMiddleware);
+router.use(requireAuth);
 
-router.post('/', upload.single('receipt'), controller.submitExpense);
-router.get('/mine', controller.getMyExpenses);
+router.post(
+  '/',
+  requireRole('VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  uploadReceipt,
+  expensesController.submitClaim
+);
 
-router.use(requireRole('TREASURER', 'PRESIDENT'));
-router.get('/', controller.getQueue);
-router.post('/:id/approve', controller.approveExpense);
-router.post('/:id/reject', controller.rejectExpense);
-router.post('/:id/pay', controller.payExpense);
+router.get(
+  '/mine',
+  requireRole('VOLUNTEER', 'VP_EVENTS', 'TREASURER', 'PRESIDENT'),
+  expensesController.myClaims
+);
+
+router.get(
+  '/',
+  requireRole('TREASURER', 'PRESIDENT'),
+  expensesController.listClaims
+);
+
+router.post(
+  '/:id/approve',
+  requireRole('TREASURER', 'PRESIDENT'),
+  expensesController.approveClaim
+);
+
+router.post(
+  '/:id/reject',
+  requireRole('TREASURER', 'PRESIDENT'),
+  expensesController.rejectClaim
+);
+
+router.post(
+  '/:id/pay',
+  requireRole('TREASURER', 'PRESIDENT'),
+  expensesController.payClaim
+);
+
+router.get(
+  '/:id/receipt',
+  expensesController.getReceipt
+);
 
 module.exports = router;

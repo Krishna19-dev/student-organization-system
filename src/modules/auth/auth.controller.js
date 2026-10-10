@@ -1,110 +1,183 @@
-const prisma = require('../../lib/prisma');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const prisma = require('../../lib/prisma');
 const { env } = require('../../config/env');
-const { getEffectiveRole } = require('../../services/role.service');
+const { getEffectiveRole, dashboardRoute } = require('../../services/role.service');
+const { badRequest, unauthorized, forbidden, conflict } = require('../../lib/errors');
+const asyncHandler = require('../../lib/asyncHandler');
 
-exports.register = async (req, res, next) => {
-  try {
-    const { email, password, name, type, desiredPosition, tier, skills, notes } = req.body;
-    
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ error: { code: 'DUPLICATE', message: 'Email already exists' } });
+function publicUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    createdAt: user.createdAt,
+  };
+}
+
+function setAuthCookie(res, token) {
+  res.cookie('token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+}
+
+exports.register = asyncHandler(async (req, res) => {
+  const { name, email, password, intent = 'GUEST', tier, skills, desiredPosition, notes } = req.body;
+
+  if (!email || !password || !name) {
+    throw badRequest('VALIDATION_ERROR', 'Name, email, and password are required');
+  }
+
+  if (password.length < 8) {
+    throw badRequest('PASSWORD_TOO_SHORT', 'Password must be at least 8 characters');
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    throw conflict('EMAIL_EXISTS', 'An account with this email already exists');
+  }
+
+  const normalizedIntent = (intent || 'GUEST').toUpperCase();
+
+  if (['MEMBER', 'LEAD'].includes(normalizedIntent)) {
+    if (!skills || skills.trim().length < 5) {
+      throw badRequest('SKILLS_REQUIRED', 'Skills must be at least 5 characters');
     }
-    
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const user = await prisma.user.create({
+    if (normalizedIntent === 'LEAD' && (!desiredPosition || desiredPosition === 'NONE')) {
+      throw badRequest('POSITION_REQUIRED', 'A desired position is required for LEAD intent');
+    }
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
       data: {
-        email,
         name,
+        email,
         password: hashedPassword,
-      }
+      },
     });
 
-    const application = await prisma.application.create({
-      data: {
-        userId: user.id,
-        type: type || 'MEMBER',
-        desiredPosition: desiredPosition || 'NONE',
-        tier: tier || 'BASIC',
-        skills: skills || '',
-        notes
-      }
-    });
-
-    res.status(201).json({ message: 'Registered', user: { id: user.id, email }, application });
-  } catch (error) {
-    next(error);
-  }
-};
-
-exports.login = async (req, res, next) => {
-  try {
-    const { email, password } = req.body;
-    const user = await prisma.user.findUnique({ where: { email } });
-    
-    if (!user) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } });
-    
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } });
-    
-    const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '7d' });
-    
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-    res.status(200).json({ message: 'Logged in', token });
-  } catch (error) {
-    next(error);
-  }
-};
-
-exports.adminLogin = async (req, res, next) => {
-  try {
-    const { email, password } = req.body;
-    const user = await prisma.user.findUnique({ where: { email } });
-    
-    if (!user) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } });
-    
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } });
-    
-    const { role } = await getEffectiveRole(user.id);
-    if (role !== 'PRESIDENT') {
-      return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Admin access required' } });
+    let application = null;
+    if (normalizedIntent !== 'GUEST') {
+      application = await tx.application.create({
+        data: {
+          userId: user.id,
+          type: normalizedIntent,
+          tier: tier || 'BASIC',
+          skills: skills || '',
+          desiredPosition: desiredPosition || 'NONE',
+          notes: notes || null,
+          status: 'PAYMENT_PENDING',
+        },
+      });
     }
 
-    const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '7d' });
-    res.cookie('token', token, { httpOnly: true });
-    res.status(200).json({ message: 'Logged in as Admin', token });
-  } catch (error) {
-    next(error);
-  }
-};
+    return { user, application };
+  });
 
-exports.me = async (req, res, next) => {
-  try {
-    const { role, positionTitle } = await getEffectiveRole(req.user.id);
-    
-    let dashboard = '/guest';
-    switch (role) {
-      case 'PRESIDENT': dashboard = '/admin'; break;
-      case 'TREASURER': dashboard = '/treasurer'; break;
-      case 'VP_EVENTS': dashboard = '/events-manager'; break;
-      case 'VOLUNTEER': dashboard = '/volunteer'; break;
-      case 'MEMBER': dashboard = '/member'; break;
-      case 'UNDER_REVIEW': dashboard = '/application-status'; break;
-      case 'AWAITING_PAYMENT': dashboard = '/pay'; break;
-      case 'REJECTED': dashboard = '/application-status'; break;
-    }
+  const token = jwt.sign({ sub: result.user.id }, env.JWT_SECRET || 'change-me', {
+    expiresIn: env.JWT_EXPIRES_IN || '7d',
+  });
 
-    res.status(200).json({
-      user: { id: req.user.id, email: req.user.email, name: req.user.name },
-      role,
-      positionTitle,
-      dashboard
-    });
-  } catch (error) {
-    next(error);
+  setAuthCookie(res, token);
+  const effective = await getEffectiveRole(result.user.id);
+  const dashboard = dashboardRoute(effective);
+
+  res.status(201).json({
+    user: publicUser(result.user),
+    effective,
+    dashboard,
+    token,
+    application: result.application,
+  });
+});
+
+exports.login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw badRequest('VALIDATION_ERROR', 'Email and password are required');
   }
-};
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    throw unauthorized('INVALID_CREDENTIALS', 'Invalid email or password');
+  }
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    throw unauthorized('INVALID_CREDENTIALS', 'Invalid email or password');
+  }
+
+  const token = jwt.sign({ sub: user.id }, env.JWT_SECRET || 'change-me', {
+    expiresIn: env.JWT_EXPIRES_IN || '7d',
+  });
+
+  setAuthCookie(res, token);
+  const effective = await getEffectiveRole(user.id);
+  const dashboard = dashboardRoute(effective);
+
+  res.json({
+    user: publicUser(user),
+    effective,
+    dashboard,
+    token,
+  });
+});
+
+exports.adminLogin = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw badRequest('VALIDATION_ERROR', 'Email and password are required');
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    throw unauthorized('INVALID_CREDENTIALS', 'Invalid email or password');
+  }
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    throw unauthorized('INVALID_CREDENTIALS', 'Invalid email or password');
+  }
+
+  const effective = await getEffectiveRole(user.id);
+  if (effective.role !== 'PRESIDENT') {
+    throw forbidden('NOT_ADMIN', 'President administration credentials required');
+  }
+
+  const token = jwt.sign({ sub: user.id }, env.JWT_SECRET || 'change-me', {
+    expiresIn: env.JWT_EXPIRES_IN || '7d',
+  });
+
+  setAuthCookie(res, token);
+
+  res.json({
+    user: publicUser(user),
+    effective,
+    dashboard: '/admin',
+    token,
+  });
+});
+
+exports.logout = asyncHandler(async (req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'Logged out successfully' });
+});
+
+exports.me = asyncHandler(async (req, res) => {
+  const effective = await getEffectiveRole(req.user.id);
+  const dashboard = dashboardRoute(effective);
+
+  res.json({
+    user: publicUser(req.user),
+    effective,
+    dashboard,
+  });
+});

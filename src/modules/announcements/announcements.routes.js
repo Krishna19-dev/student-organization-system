@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('./announcements.controller');
+const announcementsController = require('./announcements.controller');
+const { optionalAuth, requireAuth } = require('../../middleware/auth');
 const { requireRole } = require('../../middleware/roles');
-const { requireAuth: authMiddleware } = require('../../middleware/auth');
 
-router.get('/', controller.getAnnouncements);
-
-router.use(authMiddleware);
-router.post('/', requireRole('VP_EVENTS', 'PRESIDENT'), controller.createAnnouncement);
-router.patch('/:id', requireRole('VP_EVENTS', 'PRESIDENT'), controller.updateAnnouncement);
+router.get('/', optionalAuth, announcementsController.listAnnouncements);
+router.post(
+  '/',
+  requireAuth,
+  requireRole('VP_EVENTS', 'PRESIDENT'),
+  announcementsController.createAnnouncement
+);
+router.patch(
+  '/:id',
+  requireAuth,
+  requireRole('VP_EVENTS', 'PRESIDENT'),
+  announcementsController.updateAnnouncement
+);
 
 module.exports = router;

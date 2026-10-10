@@ -1,182 +1,67 @@
+const applicationService = require('../../services/application.service');
+const paymentService = require('../../services/payment.service');
 const prisma = require('../../lib/prisma');
-const crypto = require('crypto');
-const { createIncomeEntry, createExpenseEntry } = require('../../services/ledger.service');
+const { notFound, badRequest } = require('../../lib/errors');
+const asyncHandler = require('../../lib/asyncHandler');
 
-exports.getMyApplications = async (req, res, next) => {
-  try {
-    const apps = await prisma.application.findMany({ where: { userId: req.user.id } });
-    res.json(apps);
-  } catch (error) { next(error); }
-};
+exports.applyLater = asyncHandler(async (req, res) => {
+  const application = await applicationService.applyLater(req.user.id, req.body);
+  res.status(201).json(application);
+});
 
-exports.payDues = async (req, res, next) => {
-  try {
-    const application = await prisma.application.findFirst({
-      where: { userId: req.user.id, status: 'PAYMENT_PENDING' }
-    });
-    if (!application) return res.status(404).json({ error: { message: 'No pending application found' } });
-    
-    // Create Razorpay order (mocked here)
-    const orderId = 'order_mock_' + Date.now();
-    const amount = 50000; // Mock amount based on tier
+exports.myApplication = asyncHandler(async (req, res) => {
+  const application = await applicationService.getMyApplication(req.user.id);
+  res.json(application || { status: 'NONE' });
+});
 
-    const payment = await prisma.payment.create({
-      data: {
-        userId: req.user.id,
-        orderId,
-        amount,
-        purpose: 'DUES'
-      }
-    });
+exports.createDuesOrder = asyncHandler(async (req, res) => {
+  const app = await prisma.application.findFirst({
+    where: { userId: req.user.id, status: 'PAYMENT_PENDING' },
+    orderBy: { createdAt: 'desc' },
+  });
 
-    await prisma.application.update({
-      where: { id: application.id },
-      data: { paymentId: payment.id }
-    });
+  if (!app) {
+    throw notFound('NO_PENDING_APPLICATION', 'No pending application found requiring dues payment');
+  }
 
-    res.json({ orderId, amount });
-  } catch (error) { next(error); }
-};
+  // Load price for tier
+  let plan = await prisma.membershipPlan.findUnique({
+    where: { tier: app.tier },
+  });
 
-exports.verifyPayment = async (req, res, next) => {
-  try {
-    const { paymentId, signature } = req.body; // mock verify
-    
-    const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-    if (!payment || payment.status === 'PAID') return res.json({ message: 'Already paid' });
-    
-    await prisma.$transaction(async (tx) => {
-      await tx.payment.update({
-        where: { id: paymentId },
-        data: { status: 'PAID', signature }
-      });
+  // Default fallback if plans not seeded yet
+  const amount = plan ? plan.price : app.tier === 'PREMIUM' ? 100000 : 50000;
 
-      const application = await tx.application.findUnique({ where: { paymentId } });
-      await tx.application.update({
-        where: { id: application.id },
-        data: { status: 'UNDER_REVIEW', submittedAt: new Date() }
-      });
+  const order = await paymentService.createOrder({
+    purpose: 'DUES',
+    amount,
+    userId: req.user.id,
+    meta: { applicationId: app.id },
+  });
 
-      await tx.ledgerEntry.create({
-        data: {
-          type: 'INCOME',
-          category: 'DUES',
-          amount: payment.amount,
-          paymentId: payment.id
-        }
-      });
-    });
+  await prisma.application.update({
+    where: { id: app.id },
+    data: { paymentId: order.paymentId },
+  });
 
-    res.json({ message: 'Payment verified, application under review' });
-  } catch (error) { next(error); }
-};
+  res.json(order);
+});
 
-exports.getAdminQueue = async (req, res, next) => {
-  try {
-    const apps = await prisma.application.findMany({
-      where: { status: 'UNDER_REVIEW' },
-      include: { user: true }
-    });
-    res.json(apps);
-  } catch (error) { next(error); }
-};
+exports.verifyDues = asyncHandler(async (req, res) => {
+  const { gatewayOrderId, gatewayPaymentId, signature } = req.body;
+  if (!gatewayOrderId) {
+    throw badRequest('ORDER_ID_REQUIRED', 'Gateway order ID is required');
+  }
 
-exports.getApplicationDetails = async (req, res, next) => {
-  try {
-    const app = await prisma.application.findUnique({
-      where: { id: req.params.id },
-      include: { user: true, payment: true }
-    });
-    res.json(app);
-  } catch (error) { next(error); }
-};
+  const result = await paymentService.confirmPayment({
+    gatewayOrderId,
+    gatewayPaymentId: gatewayPaymentId || `pay_${Date.now()}`,
+    signature: signature || 'mock_signature',
+    actorId: req.user.id,
+  });
 
-exports.approveApplication = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    
-    const application = await prisma.application.findUnique({ where: { id }, include: { payment: true } });
-    if (!application) return res.status(404).json({ error: { message: 'Not found' } });
-    
-    const plan = await prisma.membershipPlan.findFirst({ where: { tier: application.tier } });
-    if (!plan) return res.status(500).json({ error: { message: 'Plan not found' } });
-
-    await prisma.$transaction(async (tx) => {
-      await tx.application.update({
-        where: { id },
-        data: {
-          status: 'APPROVED',
-          reviewerId: req.user.id,
-          reviewedAt: new Date(),
-          assignedPosition: application.type === 'LEAD' ? application.desiredPosition : null
-        }
-      });
-
-      const memberCode = 'MBR-' + Date.now();
-      const qrToken = crypto.randomBytes(16).toString('hex');
-      const expiry = new Date();
-      expiry.setFullYear(expiry.getFullYear() + 1);
-
-      await tx.membership.create({
-        data: {
-          userId: application.userId,
-          membershipPlanId: plan.id,
-          status: 'ACTIVE',
-          startDate: new Date(),
-          expiryDate: expiry,
-          memberCode,
-          qrToken
-        }
-      });
-
-      if (application.type === 'LEAD') {
-        await tx.roleAssignment.create({
-          data: {
-            userId: application.userId,
-            role: 'VOLUNTEER',
-            positionTitle: application.desiredPosition
-          }
-        });
-      }
-    });
-    
-    res.json({ message: 'Application approved' });
-  } catch (error) { next(error); }
-};
-
-exports.rejectApplication = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { reviewNote } = req.body;
-
-    const application = await prisma.application.findUnique({ where: { id }, include: { payment: true } });
-    if (!application) return res.status(404).json({ error: { message: 'Not found' } });
-
-    await prisma.$transaction(async (tx) => {
-      await tx.application.update({
-        where: { id },
-        data: {
-          status: 'REJECTED',
-          reviewerId: req.user.id,
-          reviewedAt: new Date(),
-          reviewNote
-        }
-      });
-
-      // Record refund in ledger
-      if (application.payment) {
-        await tx.ledgerEntry.create({
-          data: {
-            type: 'EXPENSE',
-            category: 'EXPENSE',
-            amount: application.payment.amount,
-            description: 'Refund for rejected application',
-            createdById: req.user.id
-          }
-        });
-      }
-    });
-
-    res.json({ message: 'Application rejected and refunded' });
-  } catch (error) { next(error); }
-};
+  res.json({
+    message: 'Dues payment confirmed successfully',
+    ...result,
+  });
+});

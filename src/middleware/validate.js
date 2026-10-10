@@ -1,9 +1,22 @@
-const validate = (schema) => (req, res, next) => {
+const validate = (schemas) => (req, res, next) => {
   try {
-    req.body = schema.parse(req.body);
+    if (schemas && typeof schemas.parse === 'function') {
+      req.body = schemas.parse(req.body);
+      return next();
+    }
+
+    if (schemas?.body) {
+      req.body = schemas.body.parse(req.body);
+    }
+    if (schemas?.query) {
+      req.query = schemas.query.parse(req.query);
+    }
+    if (schemas?.params) {
+      req.params = schemas.params.parse(req.params);
+    }
     next();
   } catch (err) {
-    return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: err.errors } });
+    next(err);
   }
 };
 

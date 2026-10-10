@@ -1,138 +1,184 @@
 const prisma = require('../../lib/prisma');
-const { getPrice } = require('../../services/pricing.service');
-const { decrementStock } = require('../../services/order.service');
+const orderService = require('../../services/order.service');
+const paymentService = require('../../services/payment.service');
+const { badRequest, notFound } = require('../../lib/errors');
+const asyncHandler = require('../../lib/asyncHandler');
 
-exports.getProducts = async (req, res, next) => {
-  try {
-    const products = await prisma.product.findMany({
-      include: { variants: true }
-    });
-    res.json(products);
-  } catch (error) { next(error); }
-};
+// Product Controllers
+exports.listProducts = asyncHandler(async (req, res) => {
+  const products = await prisma.product.findMany({
+    include: {
+      variants: {
+        orderBy: { size: 'asc' },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
 
-exports.checkout = async (req, res, next) => {
-  try {
-    const { variantId, qty } = req.body;
-    
-    const variant = await prisma.productVariant.findUnique({
-      where: { id: variantId },
-      include: { product: true }
-    });
-    
-    if (!variant || variant.stock < qty) {
-      return res.status(409).json({ error: { code: 'OUT_OF_STOCK', message: 'Not enough stock' } });
+  const formatted = products.map((p) => ({
+    ...p,
+    variants: p.variants.map((v) => ({
+      ...v,
+      soldOut: v.stock <= 0,
+    })),
+  }));
+
+  res.json(formatted);
+});
+
+exports.createProduct = asyncHandler(async (req, res) => {
+  const { name, description, price, basePrice, variants } = req.body;
+  const cost = parseInt(basePrice || price, 10);
+
+  if (!name || isNaN(cost) || cost < 0) {
+    throw badRequest('VALIDATION_ERROR', 'Product name and valid base price in paise are required');
+  }
+
+  if (!Array.isArray(variants) || variants.length === 0) {
+    throw badRequest('VARIANTS_REQUIRED', 'At least one variant (size & stock) is required');
+  }
+
+  // Check unique sizes
+  const sizes = variants.map((v) => (v.size || '').trim());
+  if (new Set(sizes).size !== sizes.length) {
+    throw badRequest('DUPLICATE_SIZES', 'Sizes must be unique within a product');
+  }
+
+  const product = await prisma.product.create({
+    data: {
+      name,
+      description: description || null,
+      basePrice: cost,
+      variants: {
+        create: variants.map((v) => ({
+          size: v.size,
+          stock: Math.max(0, parseInt(v.stock, 10) || 0),
+        })),
+      },
+    },
+    include: { variants: true },
+  });
+
+  res.status(201).json(product);
+});
+
+exports.updateProduct = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name, description, price, basePrice, variants } = req.body;
+
+  const existing = await prisma.product.findUnique({
+    where: { id },
+    include: { variants: true },
+  });
+
+  if (!existing) throw notFound('PRODUCT_NOT_FOUND', 'Product not found');
+
+  const updateData = {};
+  if (name) updateData.name = name;
+  if (description !== undefined) updateData.description = description;
+  if (price !== undefined || basePrice !== undefined) {
+    updateData.basePrice = parseInt(basePrice || price, 10);
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    if (Object.keys(updateData).length > 0) {
+      await tx.product.update({
+        where: { id },
+        data: updateData,
+      });
     }
 
-    // Attempt atomic decrement
-    const decremented = await decrementStock(variantId, qty);
-    if (!decremented) {
-      return res.status(409).json({ error: { code: 'OUT_OF_STOCK', message: 'Not enough stock' } });
-    }
-
-    const { isMember, discount } = await getPrice(req.user?.id, null);
-    
-    let itemPrice = variant.product.basePrice;
-    if (isMember && discount) {
-      itemPrice = Math.floor(itemPrice * (1 - (discount / 100)));
-    }
-    const amount = itemPrice * qty;
-
-    const payment = await prisma.payment.create({
-      data: {
-        userId: req.user.id,
-        amount,
-        purpose: 'MERCH',
-        orderId: 'mock_merch_order_' + Date.now()
-      }
-    });
-
-    const order = await prisma.order.create({
-      data: {
-        userId: req.user.id,
-        paymentId: payment.id,
-        items: {
-          create: [{ productVariantId: variantId, quantity: qty }]
+    if (Array.isArray(variants)) {
+      for (const v of variants) {
+        if (v.id) {
+          await tx.productVariant.update({
+            where: { id: v.id },
+            data: {
+              size: v.size !== undefined ? v.size : undefined,
+              stock: v.stock !== undefined ? Math.max(0, parseInt(v.stock, 10)) : undefined,
+            },
+          });
+        } else if (v.size) {
+          await tx.productVariant.create({
+            data: {
+              productId: id,
+              size: v.size,
+              stock: Math.max(0, parseInt(v.stock, 10) || 0),
+            },
+          });
         }
       }
+    }
+
+    return await tx.product.findUnique({
+      where: { id },
+      include: { variants: true },
     });
+  });
 
-    res.json({ orderId: order.id, paymentId: payment.id, amount, message: 'Stock reserved, verify payment' });
-  } catch (error) { next(error); }
-};
+  res.json(updated);
+});
 
-exports.verifyPayment = async (req, res, next) => {
-  try {
-    const { paymentId, signature } = req.body;
-    
-    const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-    if (!payment || payment.status === 'PAID') return res.json({ message: 'Already paid' });
-    
-    await prisma.$transaction(async (tx) => {
-      await tx.payment.update({
-        where: { id: paymentId },
-        data: { status: 'PAID', signature }
-      });
+// Order Controllers
+exports.checkoutOrder = asyncHandler(async (req, res) => {
+  const { items } = req.body;
+  if (!items || !Array.isArray(items)) {
+    throw badRequest('ITEMS_REQUIRED', 'An items array is required for checkout');
+  }
 
-      const order = await tx.order.findUnique({ where: { paymentId } });
-      await tx.order.update({
-        where: { id: order.id },
-        data: { status: 'PAID' }
-      });
+  const { order, pricing } = await orderService.checkoutOrder(req.user.id, items);
 
-      await tx.ledgerEntry.create({
-        data: {
-          type: 'INCOME',
-          category: 'MERCH',
-          amount: payment.amount,
-          paymentId: payment.id
-        }
-      });
-    });
+  const paymentOrder = await paymentService.createOrder({
+    purpose: 'MERCH',
+    amount: pricing.total,
+    userId: req.user.id,
+    meta: { orderId: order.id },
+  });
 
-    res.json({ message: 'Payment verified, order confirmed' });
-  } catch (error) { next(error); }
-};
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { paymentId: paymentOrder.paymentId },
+  });
 
-exports.getMyOrders = async (req, res, next) => {
-  try {
-    const orders = await prisma.order.findMany({ where: { userId: req.user.id }, include: { items: true } });
-    res.json(orders);
-  } catch (error) { next(error); }
-};
+  res.json({
+    order,
+    pricing,
+    payment: paymentOrder,
+  });
+});
 
-exports.createProduct = async (req, res, next) => {
-  try {
-    const product = await prisma.product.create({
-      data: req.body
-    });
-    res.status(201).json(product);
-  } catch (error) { next(error); }
-};
+exports.verifyOrderPayment = asyncHandler(async (req, res) => {
+  const { gatewayOrderId, gatewayPaymentId, signature } = req.body;
+  if (!gatewayOrderId) {
+    throw badRequest('ORDER_ID_REQUIRED', 'Gateway order ID is required');
+  }
 
-exports.updateProduct = async (req, res, next) => {
-  try {
-    const product = await prisma.product.update({
-      where: { id: req.params.id },
-      data: req.body
-    });
-    res.json(product);
-  } catch (error) { next(error); }
-};
+  const result = await paymentService.confirmPayment({
+    gatewayOrderId,
+    gatewayPaymentId: gatewayPaymentId || `pay_${Date.now()}`,
+    signature: signature || 'mock_signature',
+    actorId: req.user.id,
+  });
 
-exports.markCollected = async (req, res, next) => {
-  try {
-    const order = await prisma.order.update({
-      where: { id: req.params.id },
-      data: { status: 'COLLECTED' }
-    });
-    res.json(order);
-  } catch (error) { next(error); }
-};
+  res.json({
+    message: 'Merchandise payment verified successfully',
+    ...result,
+  });
+});
 
-exports.getAllOrders = async (req, res, next) => {
-  try {
-    const orders = await prisma.order.findMany({ include: { items: { include: { productVariant: true } }, user: true } });
-    res.json(orders);
-  } catch (error) { next(error); }
-};
+exports.myOrders = asyncHandler(async (req, res) => {
+  const orders = await orderService.getMyOrders(req.user.id);
+  res.json(orders);
+});
+
+exports.collectOrder = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const order = await orderService.collectOrder(id);
+  res.json({ message: 'Order marked as collected', order });
+});
+
+exports.adminOrders = asyncHandler(async (req, res) => {
+  const { status, page, pageSize } = req.query;
+  const result = await orderService.listAdminOrders({ status, page, pageSize });
+  res.json(result);
+});

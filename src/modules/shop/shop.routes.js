@@ -1,21 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const shopController = require('./shop.controller');
-const { requireRole, requireActiveMember } = require('../../middleware/roles');
-const { requireAuth: authMiddleware } = require('../../middleware/auth');
+const { requireRole } = require('../../middleware/roles');
+const { requireAuth } = require('../../middleware/auth');
 
-router.get('/products', shopController.getProducts);
+// Products
+router.get('/products', shopController.listProducts);
+router.get('/', shopController.listProducts);
+router.post('/products', requireAuth, requireRole('PRESIDENT'), shopController.createProduct);
+router.post('/', requireAuth, requireRole('PRESIDENT'), shopController.createProduct);
+router.patch('/products/:id', requireAuth, requireRole('PRESIDENT'), shopController.updateProduct);
+router.patch('/:id', requireAuth, requireRole('PRESIDENT'), shopController.updateProduct);
 
-// Order creation allows Guests and Members
-router.post('/orders/checkout', authMiddleware, shopController.checkout);
-router.post('/orders/verify-payment', authMiddleware, shopController.verifyPayment);
-router.get('/orders/mine', authMiddleware, shopController.getMyOrders);
+// Orders
+router.post('/orders/checkout', requireAuth, shopController.checkoutOrder);
+router.post('/checkout', requireAuth, shopController.checkoutOrder);
 
-// Admin routes
-router.use(authMiddleware);
-router.post('/products', requireRole('PRESIDENT'), shopController.createProduct);
-router.patch('/products/:id', requireRole('PRESIDENT'), shopController.updateProduct);
-router.patch('/orders/:id/collect', requireRole('VP_EVENTS', 'PRESIDENT'), shopController.markCollected);
-router.get('/admin/orders', requireRole('PRESIDENT'), shopController.getAllOrders);
+router.post('/orders/verify-payment', requireAuth, shopController.verifyOrderPayment);
+router.post('/verify-payment', requireAuth, shopController.verifyOrderPayment);
+
+router.get('/orders/mine', requireAuth, shopController.myOrders);
+router.get('/mine', requireAuth, shopController.myOrders);
+
+router.patch('/orders/:id/collect', requireAuth, requireRole('VP_EVENTS', 'PRESIDENT'), shopController.collectOrder);
+router.patch('/:id/collect', requireAuth, requireRole('VP_EVENTS', 'PRESIDENT'), shopController.collectOrder);
+
+// Admin order list
+router.get('/admin/orders', requireAuth, requireRole('PRESIDENT'), shopController.adminOrders);
 
 module.exports = router;
