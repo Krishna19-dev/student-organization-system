@@ -1,5 +1,5 @@
-import { getDemoUser } from "@/lib/auth-demo";
-import { redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth";
+import { MemberRole } from "@prisma/client";
 import AdminDashboard from "./AdminDashboard";
 
 export const metadata = {
@@ -8,12 +8,8 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  const user = await getDemoUser();
-
-  // Only ADMIN role can access this page
-  if (!user || user.role !== "ADMIN") {
-    redirect("/login");
-  }
+  // Enforce ADMIN role on the server; unauthenticated/unauthorized users get redirected to /login
+  const user = await requireRole([MemberRole.ADMIN]);
 
   return (
     <AdminDashboard

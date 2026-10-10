@@ -1,0 +1,197 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  Skyline Student Association — Prisma Schema
+//  Database: PostgreSQL
+//  ORM: Prisma 6
+//  Rule: All monetary amounts stored as INTEGER RUPEES (never float)
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum MemberRole {
+  GUEST
+  MEMBER
+  VOLUNTEER
+  TREASURER
+  ADMIN
+}
+
+enum MemberStatus {
+  ACTIVE
+  PENDING
+  INACTIVE
+}
+
+enum MemberTier {
+  BASIC
+  PREMIUM
+}
+
+enum EventStatus {
+  UPCOMING
+  COMPLETED
+  CANCELLED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ProductCategory {
+  APPAREL
+  GEAR
+  DRINKWARE
+  HEADWEAR
+  STATIONERY
+  FOOTWEAR
+  ACCESSORIES
+}
+
+enum LedgerType {
+  CREDIT
+  DEBIT
+}
+
+enum LedgerCategory {
+  TICKETING
+  MERCHANDISE
+  OPERATIONS
+  PROCUREMENT
+  SPONSORSHIP
+  MEMBERSHIP
+  OTHER
+}
+
+// ─── MODELS ───────────────────────────────────────────────────────────────────
+
+/// Association members and staff
+model Member {
+  id          String       @id @default(cuid())
+  memberId    String       @unique // Human-readable: "SKY-001"
+  name        String
+  email       String       @unique
+  passwordHash String?     // Secure bcrypt hash for authentication
+  role        MemberRole   @default(MEMBER)
+  tier        MemberTier   @default(BASIC)
+  status      MemberStatus @default(ACTIVE)
+  duePaidRs   Int          // Membership fee paid in integer rupees (299 or 599)
+  joinedAt    DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([status])
+  @@index([role])
+}
+
+/// Campus events managed by the association
+model Event {
+  id          String      @id @default(cuid())
+  eventCode   String      @unique // Human-readable: "EVT-001"
+  title       String
+  description String?
+  date        DateTime
+  capacity    Int
+  ticketsSold Int         @default(0)
+  priceRs     Int         @default(0) // 0 = free event
+  status      EventStatus @default(UPCOMING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([status])
+  @@index([date])
+}
+
+/// Financial ledger — single source of truth for all money movements.
+/// Append-only: entries are never updated or deleted.
+model LedgerEntry {
+  id          String         @id @default(cuid())
+  txnId       String         @unique // Human-readable: "TXN-9042"
+  description String
+  type        LedgerType
+  amountRs    Int            // Integer rupees — never float
+  category    LedgerCategory
+  reference   String?        // Order ref, invoice number, etc.
+  createdAt   DateTime       @default(now())
+
+  // Optional FK links — null for manually entered entries
+  memberId  String?
+  member    Member?  @relation(fields: [memberId], references: [id])
+  eventId   String?
+  event     Event?   @relation(fields: [eventId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  @@index([type])
+  @@index([category])
+  @@index([createdAt])
+}
+
+/// Merchandise products in the official store
+model Product {
+  id            String          @id @default(cuid())
+  sku           String          @unique
+  name          String
+  description   String
+  category      ProductCategory
+  priceRs       Int             // Standard price in integer rupees
+  memberPriceRs Int             // Member-discounted price in integer rupees
+  imagePath     String
+  badge         String          @default("badge-primary")
+  status        ProductStatus   @default(ACTIVE)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  variants      ProductVariant[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([status])
+  @@index([category])
+}
+
+/// Size or variant stock per product (e.g. "M", "UK 8", "One Size")
+model ProductVariant {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size         String
+  initialStock Int      @default(0)
+  sold         Int      @default(0)
+  stock        Int      @default(0) // Available = initialStock - sold + adjustments
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adjustments StockAdjustment[]
+
+  @@unique([productId, size]) // No duplicate size per product
+  @@index([productId])
+}
+
+/// Manual stock adjustment audit log (restocks, damaged goods, etc.)
+model StockAdjustment {
+  id            String         @id @default(cuid())
+  adjCode       String         @unique // Human-readable: "ADJ-1001"
+  variantId     String
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  change        Int            // Positive = restock, Negative = damaged/removed
+  previousStock Int
+  newStock      Int
+  reason        String
+  adminName     String
+  createdAt     DateTime       @default(now())
+
+  @@index([variantId])
+}
