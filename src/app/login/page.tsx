@@ -43,6 +43,12 @@ export default function LoginPage() {
       {/* Bottom Switcher */}
       <div className="text-center text-xs text-muted space-y-2">
         <p>
+          Don&apos;t have an account yet?{" "}
+          <Link href="/signup" className="font-semibold text-secondary hover:underline">
+            Register as a Member &rarr;
+          </Link>
+        </p>
+        <p>
           Want member discounts and voting rights?{" "}
           <Link href="/membership" className="font-semibold text-secondary hover:underline">
             View Membership Tiers &rarr;
