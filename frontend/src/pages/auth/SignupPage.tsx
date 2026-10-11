@@ -121,10 +121,19 @@ declare global {
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  // Mode: "official" (membership applicant) vs "guest"
-  const isGuestMode = searchParams.get("mode") === "guest" || searchParams.get("type") === "guest";
+  // Redirect any guest queries to dedicated Guest Access portal
+  useEffect(() => {
+    const isGuestQuery =
+      searchParams.get("mode") === "guest" ||
+      searchParams.get("type") === "guest" ||
+      searchParams.get("plan") === "guest" ||
+      searchParams.get("intent") === "guest";
+    if (isGuestQuery) {
+      navigate("/guest-access", { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   // Multi-step state for Official Member Application (1 to 5)
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -168,9 +177,6 @@ export default function SignupPage() {
     amount: number;
   } | null>(null);
 
-  // Guest Account Password state (only for guest mode)
-  const [guestPassword, setGuestPassword] = useState("");
-
   // Fetch live positions from backend
   useEffect(() => {
     async function fetchPositions() {
@@ -211,16 +217,6 @@ export default function SignupPage() {
         delete copy[name];
         return copy;
       });
-    }
-  };
-
-  const handleModeToggle = (mode: "official" | "guest") => {
-    setErrors({});
-    if (mode === "guest") {
-      setSearchParams({ mode: "guest" });
-    } else {
-      setSearchParams({ mode: "official" });
-      setCurrentStep(1);
     }
   };
 
@@ -451,202 +447,26 @@ export default function SignupPage() {
     }
   };
 
-  // Guest Registration Handler (₹0, Free visitor account)
-  const handleGuestSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-
-    if (!formData.name.trim()) {
-      setErrors({ name: "Full name is required." });
-      return;
-    }
-    if (!formData.email.trim()) {
-      setErrors({ email: "Email address is required." });
-      return;
-    }
-    if (guestPassword.length < 8) {
-      setErrors({ password: "Password must be at least 8 characters long." });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          password: guestPassword,
-          intent: "GUEST",
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error?.message || data.message || "Guest registration failed.");
-      }
-
-      await setDemoUser(
-        {
-          id: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
-          role: "GUEST",
-          status: "NONE",
-          positionTitle: null,
-          dashboard: "/me",
-          token: data.token,
-        },
-        data.token
-      );
-
-      navigate("/me");
-    } catch (err: any) {
-      setErrors({ guest: err.message || "Guest registration error." });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const openPositions = positions.filter((p) => p.isOpen);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 sm:py-14 space-y-8">
       {/* Page Header */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#017E84]/10 text-[#017E84]">
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#017E84]/10 text-[#017E84]">
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Club_Hub Onboarding Portal</span>
+          <span>Official Membership Application</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
-          {isGuestMode ? "Continue as Guest" : "Join Club_Hub as New Member"}
+          Join Club_Hub as Official Member (₹300)
         </h1>
         <p className="text-xs sm:text-sm text-gray-500 max-w-xl mx-auto">
-          {isGuestMode
-            ? "Free visitor account to browse public pages, bulletins, and events. No membership fees or commitments."
-            : "Complete registration, select your club positions of interest, and join our active student organization."}
+          One-time ₹300 joining fee. Complete your registration, select open club positions of interest, and join our active student organization.
         </p>
       </div>
 
-      {/* Mode Selector Tabs: Official Membership (₹300) vs Guest Access (₹0) */}
-      <div className="grid grid-cols-2 p-1.5 bg-gray-100 rounded-2xl gap-2 text-xs font-bold shadow-inner">
-        <button
-          type="button"
-          onClick={() => handleModeToggle("official")}
-          className={`py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 ${
-            !isGuestMode
-              ? "bg-white text-[#017E84] shadow-sm font-extrabold"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-[#017E84]" />
-          <span>Official Membership (₹300)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeToggle("guest")}
-          className={`py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 ${
-            isGuestMode
-              ? "bg-white text-gray-900 shadow-sm font-extrabold"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          <Globe className="w-4 h-4 text-gray-600" />
-          <span>Continue as Guest (₹0)</span>
-        </button>
-      </div>
-
-      {/* GUEST MODE VIEW */}
-      {isGuestMode && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6">
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
-            <div className="font-bold text-slate-900 flex items-center gap-1.5">
-              <ShoppingBag className="w-4 h-4 text-slate-600" />
-              <span>Free Guest Access Summary</span>
-            </div>
-            <p>
-              Guest mode allows you to purchase public event tickets and explore announcements. It does not grant official member ID, voting rights, or position eligibility.
-            </p>
-          </div>
-
-          {errors.guest && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
-              <span>{errors.guest}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleGuestSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Full Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="e.g. Arjun Mehta"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-[#017E84] focus:outline-none"
-              />
-              {errors.name && <p className="text-[11px] text-red-600 mt-1">{errors.name}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="arjun@example.com"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-[#017E84] focus:outline-none"
-              />
-              {errors.email && <p className="text-[11px] text-red-600 mt-1">{errors.email}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Choose Password (min 8 chars)</label>
-              <input
-                type="password"
-                value={guestPassword}
-                onChange={(e) => setGuestPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-[#017E84] focus:outline-none"
-              />
-              {errors.password && <p className="text-[11px] text-red-600 mt-1">{errors.password}</p>}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Creating Guest Account...</span>
-                </>
-              ) : (
-                <>
-                  <span>Create Free Guest Account</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="pt-2 text-center text-xs text-gray-500">
-            Already have an account?{" "}
-            <Link to="/login" className="text-[#017E84] font-bold hover:underline">
-              Sign In here &rarr;
-            </Link>
-          </div>
-        </div>
-      )}
-
       {/* OFFICIAL MEMBERSHIP MULTI-STEP FLOW */}
-      {!isGuestMode && (
-        <div className="space-y-6">
+      <div className="space-y-6">
           {/* Step Progress Bar (1 to 5) */}
           <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-200 shadow-2xs">
             <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-2">
@@ -870,11 +690,18 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-100 flex justify-end">
+              <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <Link
+                  to="/guest-access"
+                  className="text-xs text-gray-500 hover:text-gray-900 font-medium flex items-center gap-1"
+                >
+                  <span>Looking for free visitor access?</span>
+                  <span className="font-bold text-[#017E84] hover:underline">Continue as Guest (₹0) &rarr;</span>
+                </Link>
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="px-6 py-3 rounded-xl bg-[#017E84] hover:bg-[#016368] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#017E84] hover:bg-[#016368] text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue to Position Selection</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1317,7 +1144,6 @@ export default function SignupPage() {
             </div>
           )}
         </div>
-      )}
     </div>
   );
 }

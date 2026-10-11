@@ -127,10 +127,10 @@ export default function MembershipPage() {
 
           <div className="pt-8">
             <Link
-              to="/events"
+              to="/guest-access"
               className="w-full block text-center py-3.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-800 hover:bg-gray-50 transition-colors shadow-2xs"
             >
-              Continue as Guest
+              Continue as Guest (₹0) &rarr;
             </Link>
           </div>
         </div>

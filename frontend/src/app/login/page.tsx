@@ -60,11 +60,11 @@ export default function LoginPage() {
         </div>
 
         <Link
-          href="/signup?intent=guest"
+          href="/guest-access"
           className="w-full py-2.5 px-4 rounded-xl bg-[#017E84] hover:bg-[#016368] text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
         >
           <Ticket className="w-3.5 h-3.5" />
-          <span>Register as Guest &rarr;</span>
+          <span>Continue with Guest Access (₹0) &rarr;</span>
         </Link>
       </div>
 

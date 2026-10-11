@@ -16,6 +16,7 @@ import ProductDetailPage from "@/pages/shop/ProductDetailPage";
 import MembershipPage from "@/app/membership/page";
 import LoginPage from "@/app/login/page";
 import SignupPage from "@/pages/auth/SignupPage";
+import GuestAccessPage from "@/pages/auth/GuestAccessPage";
 import JoinPayPage from "@/pages/auth/JoinPayPage";
 import MemberVerifyPage from "@/pages/public/MemberVerifyPage";
 
@@ -95,6 +96,8 @@ export default function App() {
           <Route path="/shop/:id" element={<ProductDetailPage />} />
           <Route path="/membership" element={<MembershipPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/guest-access" element={<GuestAccessPage />} />
+          <Route path="/guest-login" element={<GuestAccessPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/join/pay" element={<JoinPayPage />} />
           <Route path="/checkout/ticket/:id" element={<CheckoutTicketPage />} />
