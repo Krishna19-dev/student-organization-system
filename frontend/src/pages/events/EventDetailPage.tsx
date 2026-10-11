@@ -5,69 +5,7 @@ import {
   Share2, ShieldCheck, CheckCircle2, AlertCircle, Sparkles 
 } from "lucide-react";
 import { API_BASE } from "@/lib/api";
-
-const SAMPLE_EVENTS = [
-  {
-    id: "EVT-001",
-    title: "Skyline Tech & Design Summit 2026",
-    date: "October 24, 2026",
-    time: "10:00 AM - 5:00 PM IST",
-    venue: "Main Auditorium, Central Campus",
-    seatsLeft: 12,
-    totalSeats: 120,
-    guestPrice: 250,
-    memberPrice: 0,
-    status: "upcoming",
-    category: "Technology",
-    description: "The flagship student technology and design symposium featuring industry keynote engineers, design portfolio reviews, and interactive live workshops on distributed systems.",
-    highlights: ["3 Keynote Talks", "Design Review Panels", "Networking Lunch", "Certificate of Participation"],
-  },
-  {
-    id: "EVT-002",
-    title: "Acoustic Sunset Jam & Poetry Open Mic",
-    date: "November 02, 2026",
-    time: "5:30 PM - 8:30 PM IST",
-    venue: "Open Air Amphitheatre",
-    seatsLeft: 0,
-    totalSeats: 80,
-    guestPrice: 150,
-    memberPrice: 50,
-    status: "upcoming",
-    category: "Cultural",
-    description: "An intimate autumn evening under the stars showcasing campus singer-songwriters, poets, and acoustic performers with warm artisanal refreshments.",
-    highlights: ["Live Unplugged Sets", "Complimentary Hot Cocoa", "Open Mic Stage Slots"],
-  },
-  {
-    id: "EVT-003",
-    title: "Annual General Body Assembly & Elections",
-    date: "October 18, 2026",
-    time: "3:00 PM - 6:00 PM IST",
-    venue: "Council Hall B",
-    seatsLeft: 45,
-    totalSeats: 200,
-    guestPrice: 0,
-    memberPrice: 0,
-    status: "upcoming",
-    category: "Governance",
-    description: "Constitutional briefing, annual financial transparency reporting by the Treasurer, and voting for vacant executive council portfolios.",
-    highlights: ["Constitutional Amendments", "Financial Audit Presentation", "Executive Council Election"],
-  },
-  {
-    id: "EVT-004",
-    title: "24-Hour Campus Hackathon Sprint",
-    date: "September 28, 2026",
-    time: "Overnight Hack",
-    venue: "Innovation Labs A & B",
-    seatsLeft: 0,
-    totalSeats: 75,
-    guestPrice: 250,
-    memberPrice: 150,
-    status: "completed",
-    category: "Hackathon",
-    description: "High-intensity prototype-building marathon addressing campus utility needs with sponsor mentorship and cash bounties.",
-    highlights: ["₹50,000 Prize Pool", "24h Mentor Access", "Energy Drinks & Meals"],
-  },
-];
+import { getStoredEvents, PublicEvent } from "@/lib/events-store";
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -75,11 +13,34 @@ export default function EventDetailPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const found = SAMPLE_EVENTS.find((e) => e.id === id) || SAMPLE_EVENTS[0];
-    setEvent(found);
+    const events = getStoredEvents();
+    const found = events.find((e) => e.id === id) || events[0];
+    if (found) {
+      const cap = found.capacity || found.totalSeats || 100;
+      const booked = found.tickets || found.seatsSold || 0;
+      const seatsLeft = Math.max(0, cap - booked);
+      const mPrice = found.memberPrice !== undefined ? found.memberPrice : 0;
+      const gPrice = found.guestPrice !== undefined ? found.guestPrice : found.price;
+
+      setEvent({
+        ...found,
+        seatsLeft,
+        totalSeats: cap,
+        memberPrice: mPrice,
+        guestPrice: gPrice,
+        time: found.time || "10:00 AM - 5:00 PM IST",
+        venue: found.venue || "Central Campus",
+        highlights: found.highlights || [
+          "Keynote & Technical Sessions",
+          "Interactive Networking Roster",
+          "Digital Attendance Certificate"
+        ]
+      });
+    }
   }, [id]);
 
   if (!event) return null;
+
 
   const isSoldOut = event.seatsLeft === 0;
 

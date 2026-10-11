@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Compass,
@@ -18,15 +20,59 @@ import {
   Clock,
   Tag,
   TrendingUp,
-  ShieldAlert
+  ShieldAlert,
+  Ticket
 } from "lucide-react";
+import { getStoredEvents, PublicEvent } from "@/lib/events-store";
+import { clearAllLocalData } from "@/lib/auth-demo";
 
 export default function HomePage() {
+  const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
   const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const isGuestSignedIn = searchParams?.get("signedIn") === "guest";
+  const isLoggedOut = searchParams?.get("loggedOut") === "true";
+
+  useEffect(() => {
+    if (isLoggedOut || searchParams?.get("clear") === "true") {
+      clearAllLocalData();
+    }
+  }, [isLoggedOut]);
+
+  useEffect(() => {
+    const load = () => {
+      setEvents(getStoredEvents());
+      setIsLoaded(true);
+    };
+    load();
+    window.addEventListener("events_updated", load);
+    window.addEventListener("storage", load);
+    return () => {
+      window.removeEventListener("events_updated", load);
+      window.removeEventListener("storage", load);
+    };
+  }, []);
+
+  const publicEvents = events.filter((ev) => ev.isPublished !== false);
 
   return (
     <div className="space-y-16 pb-16">
+      {/* SIGNED OUT CONFIRMATION BANNER */}
+      {isLoggedOut && (
+        <div className="bg-emerald-50 border-b border-emerald-200 py-3 px-4 shadow-sm animate-in fade-in duration-300">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs text-emerald-800">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>You have been signed out. You are now exploring the public Skyline portal.</span>
+            </div>
+            <Link href="/login" className="font-bold underline text-emerald-900 hover:text-emerald-700">
+              Sign In Again &rarr;
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* GUEST SIGNED IN WELCOME BANNER */}
       {isGuestSignedIn && (
         <div className="bg-secondary-light border-b border-secondary/30 py-3.5 px-4 shadow-sm animate-in fade-in duration-300">
@@ -76,19 +122,19 @@ export default function HomePage() {
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <Link
-                  href="/events"
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  <span>Explore Events &amp; Tickets</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-
-                <Link
-                  href="/membership"
+                  href="/signup"
                   className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-secondary hover:bg-secondary-hover text-white font-semibold shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-secondary/50"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Join the Association</span>
+                  <span>Join as a New Member</span>
+                </Link>
+
+                <Link
+                  href="/events"
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <span>Continue as Guest</span>
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
 
@@ -211,17 +257,17 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center">
                 <Users className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-body">1. Members &amp; Tiers</h3>
+              <h3 className="text-xl font-bold text-body">1. Members &amp; Positions</h3>
               <p className="text-sm text-muted leading-relaxed">
-                Structured Basic and Premium membership tiers. Automated annual dues calculation, 
-                instant expiry date tracking, and automated renewal reminder rosters.
+                Guest Access (₹0) and Official Club Membership (₹300 one-time fee). Dynamic club position selection, 
+                Razorpay joining dues settlement, official goodies eligibility, and executive review rosters.
               </p>
             </div>
             <div className="pt-6 mt-6 border-t border-gray-subtle flex items-center justify-between text-xs">
-              <span className="badge-basic font-medium px-2 py-0.5 rounded">BASIC</span>
-              <span className="badge-premium font-medium px-2 py-0.5 rounded">PREMIUM</span>
+              <span className="badge-info font-medium px-2 py-0.5 rounded">GUEST (₹0)</span>
+              <span className="badge-premium font-medium px-2 py-0.5 rounded">OFFICIAL (₹300)</span>
               <Link href="/membership" className="text-primary font-semibold hover:underline">
-                View Perks &rarr;
+                View Plans &rarr;
               </Link>
             </div>
           </div>
@@ -393,175 +439,122 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Event 1 */}
-          <div className="bg-surface rounded-2xl border border-gray-subtle shadow-sm overflow-hidden flex flex-col justify-between">
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="badge-info text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                  Workshop
-                </span>
-                <span className="text-xs text-muted flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Oct 24, 2026</span>
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-body hover:text-primary transition-colors">
-                Skyline Tech &amp; Design Summit 2026
-              </h3>
-              <p className="text-sm text-muted line-clamp-2">
-                A full-day hands-on summit covering product thinking, UI systems, and full-stack architecture with industry alumni.
-              </p>
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <MapPin className="w-3.5 h-3.5 text-secondary" />
-                <span>Auditorium A, Science Complex</span>
-              </div>
+        {isLoaded && publicEvents.length === 0 ? (
+          <div className="bg-surface rounded-3xl border border-dashed border-gray-subtle p-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-secondary-light text-secondary flex items-center justify-center mx-auto">
+              <Calendar className="w-6 h-6" />
             </div>
-
-            <div className="p-6 bg-page border-t border-gray-subtle space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-muted">Member Price: </span>
-                  <span className="font-bold text-status-success-dark">₹0 (Free)</span>
-                </div>
-                <div>
-                  <span className="text-muted">Guest Price: </span>
-                  <span className="font-bold text-body">₹250</span>
-                </div>
-              </div>
-
-              {/* Seat Capacity Progress */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] text-muted">
-                  <span>Seats: 180 filled</span>
-                  <span>20 left of 200</span>
-                </div>
-                <div className="w-full bg-gray-subtle rounded-full h-2 overflow-hidden">
-                  <div className="bg-primary h-2 rounded-full w-[90%]" />
-                </div>
-              </div>
-
+            <div className="max-w-md mx-auto space-y-1">
+              <h3 className="font-bold text-base text-body">New Campus Events Coming Soon</h3>
+              <p className="text-xs text-muted">
+                The President and Executive Council will publish new workshops and summits shortly. Check back soon or explore membership perks!
+              </p>
+            </div>
+            <div className="pt-2">
               <Link
-                href="/events"
-                className="w-full block text-center py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-colors"
+                href="/membership"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary hover:bg-secondary-hover text-white text-xs font-semibold shadow-xs transition-colors"
               >
-                Get Tickets
+                <ShieldCheck className="w-4 h-4" />
+                <span>Join SSA Membership</span>
               </Link>
             </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {publicEvents.slice(0, 3).map((event) => {
+              const cap = event.capacity || event.totalSeats || 100;
+              const booked = event.tickets || event.seatsSold || 0;
+              const seatsLeft = Math.max(0, cap - booked);
+              const percentFilled = Math.min(100, Math.round((booked / cap) * 100));
+              const mPrice = event.memberPrice !== undefined ? event.memberPrice : (event.price === 0 ? 0 : Math.round(event.price * 0.7));
+              const gPrice = event.guestPrice !== undefined ? event.guestPrice : event.price;
 
-          {/* Event 2 */}
-          <div className="bg-surface rounded-2xl border border-gray-subtle shadow-sm overflow-hidden flex flex-col justify-between">
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="badge-warning text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                  Cultural &amp; Arts
-                </span>
-                <span className="text-xs text-muted flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Nov 02, 2026</span>
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-body hover:text-primary transition-colors">
-                Acoustic Sunset: Campus Open Mic
-              </h3>
-              <p className="text-sm text-muted line-clamp-2">
-                Unwind with poetry, acoustic jams, and coffee on the Student Center terrace. Performers and listeners welcome.
-              </p>
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <MapPin className="w-3.5 h-3.5 text-secondary" />
-                <span>Student Amphitheater</span>
-              </div>
-            </div>
+              return (
+                <div
+                  key={event.id}
+                  className="bg-surface rounded-2xl border border-gray-subtle shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between"
+                >
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="badge-info text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                        {event.category || "Campus Event"}
+                      </span>
+                      <span className="text-xs text-muted flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-secondary" />
+                        <span>{event.date}</span>
+                      </span>
+                    </div>
 
-            <div className="p-6 bg-page border-t border-gray-subtle space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-muted">Member Price: </span>
-                  <span className="font-bold text-status-success-dark">₹50</span>
-                </div>
-                <div>
-                  <span className="text-muted">Guest Price: </span>
-                  <span className="font-bold text-body">₹150</span>
-                </div>
-              </div>
+                    <h3 className="text-lg font-bold text-body hover:text-primary transition-colors">
+                      <Link href={`/events/${event.id}`}>{event.title}</Link>
+                    </h3>
 
-              {/* Seat Capacity Progress */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] text-muted">
-                  <span>Seats: 95 filled</span>
-                  <span>25 left of 120</span>
-                </div>
-                <div className="w-full bg-gray-subtle rounded-full h-2 overflow-hidden">
-                  <div className="bg-secondary h-2 rounded-full w-[79%]" />
-                </div>
-              </div>
+                    {event.description && (
+                      <p className="text-xs text-muted line-clamp-2 leading-relaxed">
+                        {event.description}
+                      </p>
+                    )}
 
-              <Link
-                href="/events"
-                className="w-full block text-center py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-colors"
-              >
-                Get Tickets
-              </Link>
-            </div>
+                    {event.venue && (
+                      <div className="flex items-center gap-2 text-xs text-muted">
+                        <MapPin className="w-3.5 h-3.5 text-secondary shrink-0" />
+                        <span className="truncate">{event.venue}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-6 bg-page border-t border-gray-subtle space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <span className="text-muted block text-[11px]">Member Price:</span>
+                        <span className="font-bold text-status-success-dark">
+                          {mPrice === 0 ? "₹0 (Free)" : `₹${mPrice}`}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-muted block text-[11px]">Guest Price:</span>
+                        <span className="font-bold text-body">
+                          {gPrice === 0 ? "Free" : `₹${gPrice}`}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Seat Capacity Progress */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px] text-muted">
+                        <span>Seats: {booked} filled</span>
+                        <span>{seatsLeft} left of {cap}</span>
+                      </div>
+                      <div className="w-full bg-gray-subtle rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{ width: `${percentFilled}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <Link
+                        href={`/events/${event.id}`}
+                        className="w-full block text-center py-2 rounded-lg border border-gray-border hover:bg-surface text-body text-xs font-semibold transition-colors"
+                      >
+                        Details
+                      </Link>
+                      <Link
+                        href={`/checkout/ticket/${event.id}`}
+                        className="w-full block text-center py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-colors"
+                      >
+                        Get Tickets
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        )}
 
-          {/* Event 3 */}
-          <div className="bg-surface rounded-2xl border border-gray-subtle shadow-sm overflow-hidden flex flex-col justify-between">
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="badge-success text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                  Networking
-                </span>
-                <span className="text-xs text-muted flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Nov 15, 2026</span>
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-body hover:text-primary transition-colors">
-                Alumni Leadership &amp; Career Mixer
-              </h3>
-              <p className="text-sm text-muted line-clamp-2">
-                Connect with Skyline graduates leading careers in engineering, design, and business. Roundtable Q&amp;A format.
-              </p>
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <MapPin className="w-3.5 h-3.5 text-secondary" />
-                <span>Alumni Hall, 2nd Floor</span>
-              </div>
-            </div>
-
-            <div className="p-6 bg-page border-t border-gray-subtle space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-muted">Member Price: </span>
-                  <span className="font-bold text-status-success-dark">₹100</span>
-                </div>
-                <div>
-                  <span className="text-muted">Guest Price: </span>
-                  <span className="font-bold text-body">₹300</span>
-                </div>
-              </div>
-
-              {/* Seat Capacity Progress */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] text-muted">
-                  <span>Seats: 45 filled</span>
-                  <span>5 left of 50</span>
-                </div>
-                <div className="w-full bg-gray-subtle rounded-full h-2 overflow-hidden">
-                  <div className="bg-status-warning h-2 rounded-full w-[90%]" />
-                </div>
-              </div>
-
-              <Link
-                href="/events"
-                className="w-full block text-center py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-colors"
-              >
-                Get Tickets
-              </Link>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* MEMBERSHIP TIERS SECTION */}

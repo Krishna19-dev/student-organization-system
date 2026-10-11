@@ -8,6 +8,8 @@ export interface AuthActionResult {
 
 export async function loginWithAccountById(accountId: string): Promise<void> {
   const account = ALL_DEMO_ACCOUNTS.find((a) => a.id === accountId) || GUEST_DEMO_CREDENTIALS;
+  const redirectParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") : null;
+  const safeRedirect = redirectParam && redirectParam.startsWith("/") ? redirectParam : null;
 
   try {
     // Attempt real login with backend API
@@ -32,7 +34,7 @@ export async function loginWithAccountById(accountId: string): Promise<void> {
         },
         data.token
       );
-      window.location.href = data.dashboard || account.dashboard;
+      window.location.href = safeRedirect || data.dashboard || account.dashboard;
       return;
     }
   } catch {
@@ -47,7 +49,7 @@ export async function loginWithAccountById(accountId: string): Promise<void> {
     dashboard: account.dashboard,
   });
 
-  window.location.href = account.dashboard;
+  window.location.href = safeRedirect || account.dashboard;
 }
 
 export async function loginWithGuestDemo(): Promise<void> {
@@ -63,6 +65,8 @@ export async function loginAction(
 ): Promise<AuthActionResult> {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
+  const redirectParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") : null;
+  const safeRedirect = redirectParam && redirectParam.startsWith("/") ? redirectParam : null;
 
   if (!email || !password) {
     return {
@@ -93,7 +97,7 @@ export async function loginAction(
         },
         data.token
       );
-      window.location.href = data.dashboard || "/";
+      window.location.href = safeRedirect || data.dashboard || "/";
       return { success: true };
     }
 
@@ -117,7 +121,7 @@ export async function loginAction(
       role: matchingDemo.role,
       dashboard: matchingDemo.dashboard,
     });
-    window.location.href = matchingDemo.dashboard;
+    window.location.href = safeRedirect || matchingDemo.dashboard;
     return { success: true };
   }
 
@@ -137,6 +141,8 @@ export async function signupAction(
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
+  const redirectParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") : null;
+  const safeRedirect = redirectParam && redirectParam.startsWith("/") ? redirectParam : null;
 
   if (!name || !email || !password) {
     return { error: "Please fill in all required fields." };
@@ -170,7 +176,7 @@ export async function signupAction(
         },
         data.token
       );
-      window.location.href = "/me?registered=true";
+      window.location.href = safeRedirect || "/me?registered=true";
       return { success: true };
     }
   } catch {
@@ -184,7 +190,7 @@ export async function signupAction(
     dashboard: "/me",
   });
 
-  window.location.href = "/me?registered=true";
+  window.location.href = safeRedirect || "/me?registered=true";
   return { success: true };
 }
 
@@ -193,5 +199,5 @@ export async function signupAction(
  */
 export async function logoutAction(): Promise<void> {
   await clearDemoUser();
-  window.location.href = "/login?loggedOut=true";
+  window.location.href = "/?loggedOut=true";
 }

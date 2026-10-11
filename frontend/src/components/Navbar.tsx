@@ -8,7 +8,7 @@ import {
   ShieldCheck, Info, LogIn, Sparkles, LogOut, User, LayoutDashboard
 } from "lucide-react";
 import { DEMO_COOKIE_NAME } from "@/lib/demo-credentials";
-import { logoutAction } from "@/app/login/actions";
+import { getDemoUserSync, clearDemoUser, AUTH_STATE_EVENT } from "@/lib/auth-demo";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: Compass },
@@ -32,24 +32,29 @@ const DASHBOARD_PATHS = ["/admin", "/finance", "/vp", "/me", "/volunteer", "/tre
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string; role: string; dashboard?: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; role: string; dashboard?: string } | null>(() => getDemoUserSync());
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    const allCookies = document.cookie.split("; ");
-    const found = allCookies.find((c) => c.startsWith("skyline_demo_user="));
-    if (found) {
-      try {
-        const decoded = decodeURIComponent(found.split("=").slice(1).join("="));
-        setUser(JSON.parse(decoded));
-      } catch {
-        setUser(null);
-      }
-    } else {
-      setUser(null);
-    }
+    const updateUser = () => {
+      setUser(getDemoUserSync());
+    };
+    updateUser();
+    window.addEventListener(AUTH_STATE_EVENT, updateUser);
+    window.addEventListener("storage", updateUser);
+    return () => {
+      window.removeEventListener(AUTH_STATE_EVENT, updateUser);
+      window.removeEventListener("storage", updateUser);
+    };
   }, [pathname]);
+
+  const handleSignOut = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    await clearDemoUser();
+    setUser(null);
+    window.location.href = "/?loggedOut=true";
+  };
 
   // Hide public Navbar on dashboard pages (they have their own DashboardLayout sidebar)
   const isDashboard = DASHBOARD_PATHS.some(p => pathname === p || pathname?.startsWith(`${p}/`));
@@ -71,8 +76,8 @@ export default function Navbar() {
               <Compass className="w-5 h-5 text-secondary-light" />
             </div>
             <div>
-              <span className="font-bold text-lg tracking-tight block leading-tight">Skyline</span>
-              <span className="text-xs text-primary-light/80 font-medium tracking-wide block">Student Association</span>
+              <span className="font-bold text-lg tracking-tight block leading-tight">Club_Hub</span>
+              <span className="text-xs text-primary-light/80 font-medium tracking-wide block">Campus Organization</span>
             </div>
           </Link>
 
@@ -105,12 +110,13 @@ export default function Navbar() {
                   <User className="w-3.5 h-3.5 text-secondary-light" />
                   <span className="font-bold truncate max-w-[120px]">{user.name}</span>
                 </div>
-                <form action={logoutAction}>
-                  <button type="submit" title="Sign Out"
-                    className="p-2 rounded-xl bg-primary-hover text-primary-light hover:text-white hover:bg-red-500/20 transition-all">
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </form>
+                <button 
+                  type="button" 
+                  onClick={handleSignOut}
+                  title="Sign Out"
+                  className="p-2 rounded-xl bg-primary-hover text-primary-light hover:text-white hover:bg-red-500/20 transition-all">
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -163,8 +169,8 @@ export default function Navbar() {
             {user ? (
               <button
                 type="button"
-                onClick={() => logoutAction()}
-                className="w-full py-2 bg-red-600/30 text-white rounded-xl text-xs font-bold"
+                onClick={handleSignOut}
+                className="w-full py-2 bg-red-600/30 text-white rounded-xl text-xs font-bold hover:bg-red-600/50 transition-colors"
               >
                 Sign Out
               </button>

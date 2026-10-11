@@ -30,6 +30,7 @@ import {
   Activity,
 } from "lucide-react";
 import { logoutAction } from "@/app/login/actions";
+import { getDemoUserSync, clearDemoUser, AUTH_STATE_EVENT } from "@/lib/auth-demo";
 
 export type DashboardRole =
   | "PRESIDENT"
@@ -184,24 +185,31 @@ export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(() => getDemoUserSync());
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sections = NAV_CONFIG[role] ?? [];
   const meta = ROLE_META[role];
 
   useEffect(() => {
-    const allCookies = document.cookie.split("; ");
-    const found = allCookies.find((c) => c.startsWith("skyline_demo_user="));
-    if (found) {
-      try {
-        const decoded = decodeURIComponent(found.split("=").slice(1).join("="));
-        setUser(JSON.parse(decoded));
-      } catch {
-        setUser(null);
-      }
-    }
+    const updateUser = () => {
+      setUser(getDemoUserSync());
+    };
+    updateUser();
+    window.addEventListener(AUTH_STATE_EVENT, updateUser);
+    window.addEventListener("storage", updateUser);
+    return () => {
+      window.removeEventListener(AUTH_STATE_EVENT, updateUser);
+      window.removeEventListener("storage", updateUser);
+    };
   }, [pathname]);
+
+  const handleSignOut = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    await clearDemoUser();
+    setUser(null);
+    window.location.href = "/?loggedOut=true";
+  };
 
   const userInitials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -299,18 +307,17 @@ export default function DashboardLayout({
             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
             <span>View Public Portal</span>
           </Link>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="w-full flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-xs text-white/60 hover:bg-red-500/20 hover:text-red-300 transition-all"
-              style={{ width: "calc(100% - 1rem)" }}
-            >
-              <div className={`w-6 h-6 rounded-full ${meta.color} flex items-center justify-center text-[9px] font-black shrink-0`}>
-                {userInitials}
-              </div>
-              <span>Sign Out</span>
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-xs text-white/60 hover:bg-red-500/20 hover:text-red-300 transition-all text-left"
+            style={{ width: "calc(100% - 1rem)" }}
+          >
+            <div className={`w-6 h-6 rounded-full ${meta.color} flex items-center justify-center text-[9px] font-black shrink-0`}>
+              {userInitials}
+            </div>
+            <span>Sign Out</span>
+          </button>
         </div>
       </aside>
 

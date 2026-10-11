@@ -1,11 +1,17 @@
 import { DemoUser, DEMO_COOKIE_NAME, AUTH_TOKEN_COOKIE } from "./demo-credentials";
 
-export async function getDemoUser(): Promise<DemoUser | null> {
+export const AUTH_STATE_EVENT = "skyline_auth_changed";
+
+/**
+ * Synchronously reads the current authenticated user from localStorage or document.cookie.
+ */
+export function getDemoUserSync(): DemoUser | null {
   if (typeof window === "undefined") return null;
   const session = localStorage.getItem(DEMO_COOKIE_NAME);
   if (session) {
     try {
-      return JSON.parse(session) as DemoUser;
+      const parsed = JSON.parse(session) as DemoUser;
+      if (parsed && parsed.email) return parsed;
     } catch {}
   }
   const cookies = document.cookie.split("; ");
@@ -13,10 +19,16 @@ export async function getDemoUser(): Promise<DemoUser | null> {
   if (!sessionCookie) return null;
   try {
     const val = sessionCookie.split("=").slice(1).join("=");
-    return JSON.parse(decodeURIComponent(val)) as DemoUser;
+    const parsed = JSON.parse(decodeURIComponent(val)) as DemoUser;
+    if (parsed && parsed.email) return parsed;
+    return null;
   } catch {
     return null;
   }
+}
+
+export async function getDemoUser(): Promise<DemoUser | null> {
+  return getDemoUserSync();
 }
 
 export async function getAuthToken(): Promise<string | null> {
@@ -37,12 +49,33 @@ export async function setDemoUser(user: DemoUser, token?: string): Promise<void>
     localStorage.setItem(AUTH_TOKEN_COOKIE, token);
     document.cookie = `${AUTH_TOKEN_COOKIE}=${token}; path=/; max-age=604800; SameSite=Lax`;
   }
+  window.dispatchEvent(new Event(AUTH_STATE_EVENT));
+  window.dispatchEvent(new StorageEvent("storage", { key: DEMO_COOKIE_NAME }));
 }
+
+export const LOCAL_MOCK_KEYS = [
+  DEMO_COOKIE_NAME,
+  AUTH_TOKEN_COOKIE,
+  "skyline_members",
+  "pending_membership",
+  "user_tickets",
+  "user_orders",
+];
 
 export async function clearDemoUser(): Promise<void> {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(DEMO_COOKIE_NAME);
-  localStorage.removeItem(AUTH_TOKEN_COOKIE);
-  document.cookie = `${DEMO_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
-  document.cookie = `${AUTH_TOKEN_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+  for (const k of LOCAL_MOCK_KEYS) {
+    try {
+      localStorage.removeItem(k);
+    } catch {}
+  }
+  document.cookie = `${DEMO_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax`;
+  document.cookie = `${AUTH_TOKEN_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax`;
+  window.dispatchEvent(new Event(AUTH_STATE_EVENT));
+  window.dispatchEvent(new StorageEvent("storage", { key: DEMO_COOKIE_NAME }));
 }
+
+export function clearAllLocalData(): void {
+  clearDemoUser();
+}
+

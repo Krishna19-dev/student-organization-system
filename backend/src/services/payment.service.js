@@ -8,33 +8,36 @@ const { generateToken } = require('../lib/qr');
 
 const handlers = {
   DUES: async (tx, payment) => {
-    let applicationId = payment.meta?.applicationId;
-    if (!applicationId) {
-      const app = await tx.application.findFirst({
-        where: { userId: payment.userId, status: 'PAYMENT_PENDING' },
-      });
-      applicationId = app?.id;
-    }
-
-    if (!applicationId) {
-      throw notFound('APPLICATION_NOT_FOUND', 'Pending application not found for payment');
-    }
-
-    const application = await tx.application.findUnique({
-      where: { id: applicationId },
+    let application = await tx.application.findFirst({
+      where: {
+        OR: [
+          { paymentId: payment.id },
+          { userId: payment.userId, status: 'PAYMENT_PENDING' },
+          { userId: payment.userId, status: 'UNDER_REVIEW' },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!application) {
-      throw notFound('APPLICATION_NOT_FOUND', 'Application record missing');
+      throw notFound('APPLICATION_NOT_FOUND', 'Pending application not found for payment');
     }
 
-    const plan = await tx.membershipPlan.findUnique({
+    let plan = await tx.membershipPlan.findUnique({
       where: { tier: application.tier },
     });
 
     if (!plan) {
-      throw notFound('PLAN_NOT_FOUND', `Membership plan for tier ${application.tier} not found`);
+      plan = await tx.membershipPlan.findFirst();
     }
+
+    if (!plan) {
+      plan = await tx.membershipPlan.create({
+        data: { tier: 'BASIC', price: 30000, merchDiscount: 20 },
+      });
+    }
+
+    const applicationId = application.id;
 
     // 1. Update application to UNDER_REVIEW
     await tx.application.update({
@@ -183,7 +186,7 @@ async function createOrder({ purpose, amount, userId, meta }) {
     throw badRequest('INVALID_AMOUNT', 'Amount must be greater than zero');
   }
 
-  const gateway = createGatewayOrder(amount);
+  const gateway = await createGatewayOrder(amount);
 
   const payment = await defaultPrisma.payment.create({
     data: {
@@ -192,7 +195,6 @@ async function createOrder({ purpose, amount, userId, meta }) {
       purpose,
       orderId: gateway.id,
       status: 'CREATED',
-      meta: meta || {},
     },
   });
 

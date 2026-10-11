@@ -5,11 +5,13 @@ import {
   ArrowLeft, Download, Sparkles, User, Calendar, MapPin 
 } from "lucide-react";
 import { getDemoUser } from "@/lib/auth-demo";
+import { getStoredEvents, saveStoredEvents, PublicEvent } from "@/lib/events-store";
 
 export default function CheckoutTicketPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentEvent, setCurrentEvent] = useState<PublicEvent | null>(null);
   const [attendeeName, setAttendeeName] = useState("");
   const [attendeeEmail, setAttendeeEmail] = useState("");
   const [isMember, setIsMember] = useState(false);
@@ -17,6 +19,10 @@ export default function CheckoutTicketPage() {
   const [ticketIssued, setTicketIssued] = useState<any | null>(null);
 
   useEffect(() => {
+    const events = getStoredEvents();
+    const ev = events.find((e) => e.id === id) || events[0];
+    setCurrentEvent(ev || null);
+
     getDemoUser().then((u) => {
       if (u) {
         setCurrentUser(u);
@@ -28,24 +34,41 @@ export default function CheckoutTicketPage() {
         setAttendeeEmail("guest@skyline.edu");
       }
     });
-  }, []);
+  }, [id]);
 
-  const eventTitle = id === "EVT-002" ? "Acoustic Sunset Jam & Poetry Open Mic" : "Skyline Tech & Design Summit 2026";
-  const standardPrice = id === "EVT-002" ? 150 : 250;
-  const memberDiscount = isMember ? (id === "EVT-002" ? 100 : 250) : 0;
-  const finalPrice = Math.max(0, standardPrice - memberDiscount);
+  const eventTitle = currentEvent?.title || "Skyline Campus Event";
+  const standardPrice = currentEvent?.guestPrice !== undefined ? currentEvent.guestPrice : (currentEvent?.price ?? 250);
+  const mPrice = currentEvent?.memberPrice !== undefined ? currentEvent.memberPrice : 0;
+  const finalPrice = isMember ? mPrice : standardPrice;
+  const memberDiscount = isMember ? Math.max(0, standardPrice - mPrice) : 0;
 
   const handlePayAndIssue = (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
     setTimeout(() => {
+      // Increment booked seats in stored events
+      const events = getStoredEvents();
+      const updatedEvents = events.map((ev) => {
+        if (ev.id === id) {
+          const cap = ev.capacity || ev.totalSeats || 100;
+          const currentBooked = ev.tickets || ev.seatsSold || 0;
+          return {
+            ...ev,
+            tickets: Math.min(cap, currentBooked + 1),
+            seatsSold: Math.min(cap, currentBooked + 1),
+          };
+        }
+        return ev;
+      });
+      saveStoredEvents(updatedEvents);
+
       const generatedTicket = {
         id: `TCK-${Math.floor(100000 + Math.random() * 900000)}`,
         eventId: id || "EVT-001",
         eventTitle,
-        venue: "Central Campus Auditorium",
-        date: "October 24, 2026",
+        venue: currentEvent?.venue || "Central Campus Auditorium",
+        date: currentEvent?.date || "October 24, 2026",
         attendee: attendeeName,
         email: attendeeEmail,
         status: "VALID",
@@ -60,8 +83,9 @@ export default function CheckoutTicketPage() {
       } catch {}
       setTicketIssued(generatedTicket);
       setIsProcessing(false);
-    }, 1200);
+    }, 1000);
   };
+
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 space-y-6">

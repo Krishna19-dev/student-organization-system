@@ -1,46 +1,60 @@
 import React from "react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { 
   ShieldCheck, 
   CheckCircle2, 
-  HelpCircle
+  HelpCircle,
+  Sparkles,
+  ArrowRight,
+  Gift,
+  Users,
+  Briefcase,
+  Layers,
+  FileCheck
 } from "lucide-react";
 
 export const metadata = {
-  title: "Membership Tiers & Perks | Skyline Student Association",
-  description: "Join the Skyline Student Association. Compare Guest, Basic, and Premium membership tiers.",
+  title: "Membership Plans | Club_Hub",
+  description: "Join Club_Hub campus student organization. Compare Guest Access (₹0) and Official Club Membership (₹300 one-time fee).",
 };
 
 const COMPARISON_FEATURES = [
-  { name: "Public Announcements & Bulletins", guest: true, basic: true, premium: true },
-  { name: "Event Ticket Booking Access", guest: true, basic: true, premium: true },
-  { name: "Discounted Member Ticket Rates", guest: false, basic: true, premium: true },
-  { name: "Free Entry to Flagship Tech Summits", guest: false, basic: false, premium: true },
-  { name: "Priority Fast-Track QR Gate Line", guest: false, basic: true, premium: true },
-  { name: "Annual General Body Voting Voice", guest: false, basic: true, premium: true },
-  { name: "Executive Board Voting & Candidacy", guest: false, basic: false, premium: true },
-  { name: "Volunteer Task Board Access", guest: false, basic: false, premium: true },
-  { name: "Reimbursement Expense Claims", guest: false, basic: false, premium: true },
-  { name: "Official Enamel Crest Pin Gift", guest: false, basic: false, premium: true },
-  { name: "15% Association Merch Store Discount", guest: false, basic: false, premium: true },
+  { name: "Public Website & Event Exploration", guest: true, official: true },
+  { name: "Public Bulletins & Announcements", guest: true, official: true },
+  { name: "Official Club_Hub Membership Status", guest: false, official: true },
+  { name: "Official Member ID & Verified Account", guest: false, official: true },
+  { name: "Express Interest in Open Club Positions", guest: false, official: true },
+  { name: "Official Club_Hub Goodies & T-Shirt Eligibility", guest: false, official: true },
+  { name: "Member-Only Teamwork & Collaboration Hub", guest: false, official: true },
+  { name: "Member-Only Workspaces & Activity Channels", guest: false, official: true },
+  { name: "Priority Member Updates from Administration", guest: false, official: true },
+  { name: "Voting in Annual Club Elections", guest: false, official: true },
 ];
 
 const FAQS = [
   {
-    q: "How long does a Skyline membership remain active?",
-    a: "Memberships run for the full academic year (365 days from the date of dues payment). The platform automatically queues renewal reminder alerts 14 days before your expiry date.",
+    q: "Is the ₹300 fee a subscription or a one-time joining fee?",
+    a: "The ₹300 fee is a strictly one-time joining fee for Club_Hub membership. There are no recurring monthly or hidden annual charges.",
   },
   {
-    q: "How does the single-ledger accounting protect my membership dues?",
-    a: "Every rupee received in dues creates an instant, immutable LedgerEntry in our PostgreSQL database. Dues cannot be accepted without a recorded ledger credit, guaranteeing 100% auditable student funds.",
+    q: "Does paying the ₹300 fee guarantee a club position or leadership role?",
+    a: "No. Paying the joining fee allows you to express interest in open club positions (such as Web Dev, Design, Event Management, etc.). The Club Administration and President review all applications and appoint candidates based on qualifications.",
   },
   {
-    q: "Can I upgrade from Basic to Premium midway through the semester?",
-    a: "Yes! You can upgrade anytime by paying the ₹300 difference. Your renewal anniversary resets to grant you a full year of Premium benefits.",
+    q: "When will I receive my account credentials and member ID?",
+    a: "After your payment is verified, your application enters administrative review. Our club administration aims to review your application within one working day. Once approved, you will receive an official Club_Hub Member ID and activation instructions.",
   },
   {
-    q: "How do member ticket discounts work?",
-    a: "When signed into your Skyline member account, the checkout system automatically detects your tier and applies your discounted or zero-rupee rate before generating your QR ticket pass.",
+    q: "What is the club's refund policy if an application is rejected?",
+    a: "If your membership application cannot be approved, your ₹300 joining fee will be promptly refunded back to your original payment method in full in accordance with Club_Hub's transparent treasury policy.",
+  },
+  {
+    q: "What goodies and merchandise am I eligible for?",
+    a: "Official members are eligible for the welcome package including an official Club_Hub T-shirt, crest badge, and stickers subject to seasonal club merchandise distribution schedules.",
+  },
+  {
+    q: "Can I explore the website as a Guest without paying?",
+    a: "Absolutely! Guest access is completely free (₹0). You can browse public announcements, explore upcoming events, and view club initiatives without registering or paying any fee.",
   },
 ];
 
@@ -48,217 +62,184 @@ export default function MembershipPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
       {/* Header Banner */}
-      <div className="bg-primary-light rounded-3xl p-8 sm:p-12 border border-primary/20 text-center max-w-3xl mx-auto space-y-4">
-        <div className="inline-flex items-center gap-1.5 badge-primary px-3.5 py-1.5 rounded-full text-xs font-semibold">
-          <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-          <span>Official Membership Program</span>
+      <div className="bg-[#FAF7F9] rounded-3xl p-8 sm:p-12 border border-[#4A1942]/15 text-center max-w-3xl mx-auto space-y-4">
+        <div className="inline-flex items-center gap-1.5 bg-[#4A1942]/10 text-[#4A1942] px-3.5 py-1.5 rounded-full text-xs font-semibold">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#4A1942]" />
+          <span>Club_Hub Membership Program</span>
         </div>
-        <h1 className="text-3xl sm:text-5xl font-extrabold text-body tracking-tight">
-          Invest in Your Campus Leadership
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-gray-900 tracking-tight">
+          Choose Your Membership Path
         </h1>
-        <p className="text-sm sm:text-base text-muted leading-relaxed">
-          Skyline Student Association is run by students, for students. Choose the tier 
-          that fits your journey, access discounted tickets, and build lifelong connections.
+        <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+          Club_Hub empowers students to build, organize, and lead. Browse freely as a Guest or apply for Official Membership to unlock leadership positions, goodies, and collaborative workspaces.
         </p>
       </div>
 
-      {/* Tier Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-        {/* Tier: Guest */}
-        <div className="bg-surface rounded-3xl p-8 border border-gray-subtle shadow-sm flex flex-col justify-between">
+      {/* 2-Tier Cards Grid: Guest (₹0) vs Official Membership (₹300) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-5xl mx-auto">
+        {/* Plan A: Guest Access */}
+        <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex flex-col justify-between hover:border-gray-300 transition-all">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <span className="badge-info text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                Unregistered
+              <span className="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                Plan A
               </span>
-              <span className="text-xs text-muted">Tier 0</span>
+              <span className="text-xs text-gray-400 font-medium">Public Access</span>
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-body">Guest</h2>
-              <p className="text-xs text-muted mt-1">Open campus student or casual event attendee</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Guest Access</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Explore public club pages, events, bulletins, and announcements freely.
+              </p>
             </div>
             <div className="pt-2">
-              <span className="text-4xl font-extrabold text-body">₹0</span>
-              <span className="text-xs text-muted ml-1">/ year</span>
+              <span className="text-4xl sm:text-5xl font-extrabold text-gray-900">₹0</span>
+              <span className="text-xs text-gray-400 ml-1">/ Free Forever</span>
             </div>
 
-            <ul className="space-y-3 text-xs text-body border-t border-gray-subtle pt-6">
+            <ul className="space-y-3.5 text-xs text-gray-700 border-t border-gray-100 pt-6">
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Browse public events &amp; bulletins</span>
+                <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                <span>Browse public club pages &amp; information</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Purchase standard guest-rate event tickets</span>
+                <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                <span>Explore public events &amp; club announcements</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Purchase official club apparel</span>
+                <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                <span>No registration or joining fee required</span>
+              </li>
+              <li className="flex items-center gap-2.5 text-gray-400">
+                <span className="w-4 text-center shrink-0 font-bold">✕</span>
+                <span>No official Club_Hub membership status</span>
+              </li>
+              <li className="flex items-center gap-2.5 text-gray-400">
+                <span className="w-4 text-center shrink-0 font-bold">✕</span>
+                <span>No member ID or member-only portal</span>
+              </li>
+              <li className="flex items-center gap-2.5 text-gray-400">
+                <span className="w-4 text-center shrink-0 font-bold">✕</span>
+                <span>No club goodies or T-shirt entitlement</span>
               </li>
             </ul>
           </div>
 
           <div className="pt-8">
             <Link
-              href="/events"
-              className="w-full block text-center py-3 rounded-xl border border-gray-border text-xs font-semibold text-body hover:bg-page transition-colors"
+              to="/events"
+              className="w-full block text-center py-3.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-800 hover:bg-gray-50 transition-colors shadow-2xs"
             >
               Continue as Guest
             </Link>
           </div>
         </div>
 
-        {/* Tier: Basic Member */}
-        <div className="bg-surface rounded-3xl p-8 border-2 border-secondary shadow-md flex flex-col justify-between relative">
+        {/* Plan B: Official Club Membership */}
+        <div className="bg-white rounded-3xl p-8 border-2 border-[#017E84] shadow-xl flex flex-col justify-between relative">
+          <div className="absolute -top-3.5 right-6 bg-[#017E84] text-white px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            <span>Recommended</span>
+          </div>
+
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <span className="badge-basic text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                BASIC
+              <span className="bg-teal-50 text-[#017E84] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-teal-200">
+                Plan B
               </span>
-              <span className="text-xs text-secondary font-medium">Recommended</span>
+              <span className="text-xs text-[#017E84] font-bold">Official Membership</span>
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-body">Basic Member</h2>
-              <p className="text-xs text-muted mt-1">Active participants attending workshops and social mixers</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Official Club Membership</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Full student membership with leadership position eligibility, goodies, and collaboration hub.
+              </p>
             </div>
-            <div className="pt-2">
-              <span className="text-4xl font-extrabold text-primary">₹200</span>
-              <span className="text-xs text-muted ml-1">/ academic year</span>
+            <div className="pt-2 flex items-baseline gap-2">
+              <span className="text-4xl sm:text-5xl font-black text-[#017E84]">₹300</span>
+              <div className="text-xs text-gray-500">
+                <div className="font-bold text-gray-700">One-Time Joining Fee</div>
+                <div>No recurring subscription</div>
+              </div>
             </div>
 
-            <ul className="space-y-3 text-xs text-body border-t border-gray-subtle pt-6">
+            <ul className="space-y-3.5 text-xs text-gray-800 border-t border-gray-100 pt-6">
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span className="font-semibold text-body">Up to 40% discount on event tickets</span>
+                <CheckCircle2 className="w-4 h-4 text-[#017E84] shrink-0" />
+                <span className="font-bold text-gray-900">Official Club_Hub membership (subject to review)</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Priority fast-track QR gate check-in</span>
+                <Gift className="w-4 h-4 text-[#017E84] shrink-0" />
+                <span>Eligibility for official goodies &amp; club T-shirt</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Annual General Meeting voting voice</span>
+                <Briefcase className="w-4 h-4 text-[#017E84] shrink-0" />
+                <span>Eligibility to express interest in available club positions</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Automated 14-day renewal reminders</span>
+                <Users className="w-4 h-4 text-[#017E84] shrink-0" />
+                <span>Access to member-only teamwork &amp; collaboration hub</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-[#017E84] shrink-0" />
+                <span>Official Member ID &amp; account access after approval</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <FileCheck className="w-4 h-4 text-[#017E84] shrink-0" />
+                <span>Priority membership updates from administration</span>
               </li>
             </ul>
           </div>
 
           <div className="pt-8">
             <Link
-              href="/login"
-              className="w-full block text-center py-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow transition-colors"
+              to="/signup?plan=official"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#017E84] hover:bg-[#016368] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
             >
-              Enroll as Basic Member
+              <span>Apply for Membership — ₹300</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-        </div>
-
-        {/* Tier: Premium Member */}
-        <div className="bg-surface rounded-3xl p-8 border-2 border-status-warning shadow-xl flex flex-col justify-between relative">
-          <div className="absolute -top-3.5 right-6 badge-premium px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-sm">
-            Top Tier
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <span className="badge-premium text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                PREMIUM
-              </span>
-              <span className="text-xs text-status-warning-dark font-medium">Leadership Tier</span>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-body">Premium Member</h2>
-              <p className="text-xs text-muted mt-1">Student leaders, volunteers, organizers, and committee candidates</p>
-            </div>
-            <div className="pt-2">
-              <span className="text-4xl font-extrabold text-secondary">₹500</span>
-              <span className="text-xs text-muted ml-1">/ academic year</span>
-            </div>
-
-            <ul className="space-y-3 text-xs text-body border-t border-gray-subtle pt-6">
-              <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span className="font-semibold text-body">100% Free entry to all flagship summits</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Free Association Enamel Pin gift</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Access to Volunteer Task Board &amp; Fundraisers</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Submit expense claims for instant reimbursement</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>Full electoral vote for Executive Council</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-                <span>15% off all official merchandise</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="pt-8">
-            <Link
-              href="/login"
-              className="w-full block text-center py-3 rounded-xl bg-secondary hover:bg-secondary-hover text-white text-xs font-semibold shadow transition-colors"
-            >
-              Enroll as Premium Member
-            </Link>
+            <p className="text-[11px] text-gray-400 text-center mt-2.5">
+              Secure ₹300 Razorpay settlement · Subject to admin review · Full refund if rejected
+            </p>
           </div>
         </div>
       </div>
 
       {/* Feature Comparison Table */}
-      <div className="bg-surface rounded-3xl p-6 sm:p-10 border border-gray-subtle shadow-sm space-y-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-sm space-y-6 max-w-5xl mx-auto">
         <div className="text-center max-w-xl mx-auto space-y-2">
-          <h2 className="text-2xl font-bold text-body">Detailed Feature Comparison</h2>
-          <p className="text-xs sm:text-sm text-muted">
-            See exactly what is included across each membership tier.
+          <h2 className="text-2xl font-bold text-gray-900">Plan Comparison Matrix</h2>
+          <p className="text-xs sm:text-sm text-gray-500">
+            Compare capabilities between Guest Access and Official Club Membership.
           </p>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-gray-subtle text-muted">
-                <th className="py-3 px-4 font-semibold text-body">Platform Capability</th>
-                <th className="py-3 px-4 font-semibold text-center text-body">Guest</th>
-                <th className="py-3 px-4 font-semibold text-center text-primary">Basic (₹200)</th>
-                <th className="py-3 px-4 font-semibold text-center text-secondary">Premium (₹500)</th>
+              <tr className="border-b border-gray-200 text-gray-500">
+                <th className="py-3.5 px-4 font-bold text-gray-900">Feature / Capability</th>
+                <th className="py-3.5 px-4 font-bold text-center text-gray-700">Guest Access (₹0)</th>
+                <th className="py-3.5 px-4 font-bold text-center text-[#017E84]">Official Membership (₹300)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-subtle">
+            <tbody className="divide-y divide-gray-100 font-medium">
               {COMPARISON_FEATURES.map((feat) => (
-                <tr key={feat.name} className="hover:bg-page/50 transition-colors">
-                  <td className="py-3 px-4 font-medium text-body">{feat.name}</td>
-                  <td className="py-3 px-4 text-center">
+                <tr key={feat.name} className="hover:bg-gray-50/70 transition-colors">
+                  <td className="py-3.5 px-4 text-gray-800">{feat.name}</td>
+                  <td className="py-3.5 px-4 text-center">
                     {feat.guest ? (
-                      <CheckCircle2 className="w-4 h-4 text-status-success inline" />
+                      <CheckCircle2 className="w-4 h-4 text-teal-600 inline" />
                     ) : (
-                      <span className="text-gray-border">—</span>
+                      <span className="text-gray-300 font-bold">—</span>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-center">
-                    {feat.basic ? (
-                      <CheckCircle2 className="w-4 h-4 text-status-success inline" />
+                  <td className="py-3.5 px-4 text-center">
+                    {feat.official ? (
+                      <CheckCircle2 className="w-4 h-4 text-[#017E84] inline" />
                     ) : (
-                      <span className="text-gray-border">—</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {feat.premium ? (
-                      <CheckCircle2 className="w-4 h-4 text-status-success inline" />
-                    ) : (
-                      <span className="text-gray-border">—</span>
+                      <span className="text-gray-300 font-bold">—</span>
                     )}
                   </td>
                 </tr>
@@ -269,17 +250,17 @@ export default function MembershipPage() {
       </div>
 
       {/* FAQ Accordion Section */}
-      <div className="bg-surface rounded-3xl p-6 sm:p-10 border border-gray-subtle shadow-sm space-y-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-sm space-y-6 max-w-5xl mx-auto">
         <div className="flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-secondary" />
-          <h2 className="text-2xl font-bold text-body">Frequently Asked Questions</h2>
+          <HelpCircle className="w-5 h-5 text-[#4A1942]" />
+          <h2 className="text-2xl font-bold text-gray-900">Frequently Asked Questions</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           {FAQS.map((faq, idx) => (
-            <div key={idx} className="p-5 rounded-2xl bg-page border border-gray-subtle space-y-2">
-              <h4 className="font-bold text-sm text-body">{faq.q}</h4>
-              <p className="text-xs text-muted leading-relaxed">{faq.a}</p>
+            <div key={idx} className="p-5 rounded-2xl bg-[#FAF7F9] border border-gray-100 space-y-2">
+              <h4 className="font-bold text-xs sm:text-sm text-gray-900">{faq.q}</h4>
+              <p className="text-xs text-gray-600 leading-relaxed">{faq.a}</p>
             </div>
           ))}
         </div>

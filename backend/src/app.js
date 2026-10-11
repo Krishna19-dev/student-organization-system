@@ -36,7 +36,9 @@ app.get('/health', (req, res) => res.json({ ok: true, timestamp: new Date().toIS
 // API Module Routes
 app.use('/api/auth', require('./modules/auth/auth.routes'));
 app.use('/api/applications', require('./modules/applications/applications.routes'));
+app.use('/api/positions', require('./modules/positions/positions.routes'));
 app.use('/api/memberships', require('./modules/memberships/memberships.routes'));
+app.use('/api/members', require('./modules/memberships/memberships.routes'));
 app.use('/api/events', require('./modules/events/events.routes'));
 app.use('/api/tickets', require('./modules/tickets/tickets.routes'));
 app.use('/api/products', require('./modules/shop/shop.routes'));
