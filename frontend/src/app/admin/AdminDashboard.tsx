@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { getStoredEvents, saveStoredEvents, PublicEvent } from "@/lib/events-store";
 import { getStoredAnnouncements, saveStoredAnnouncements, Announcement } from "@/lib/announcements-store";
+import { clearDemoUser } from "@/lib/auth-demo";
 import {
   Users, Calendar, ShoppingBag, Receipt,
   LogOut, Bell, Search,
@@ -102,20 +103,47 @@ export default function AdminDashboard({
   const [events, setEvents] = useState<EventItem[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
-  // Load persisted data from localStorage on mount
+  // Load live data on mount
   useEffect(() => {
     // Events
     const storedEvents = getStoredEvents();
     if (storedEvents && storedEvents.length > 0) {
       setEvents(storedEvents as EventItem[]);
     }
-    // Members — fall back to INITIAL_MEMBERS if no saved data yet
+    // Remove stale mock database from localStorage
     try {
-      const raw = localStorage.getItem(MEMBERS_STORAGE_KEY);
-      setMembers(raw ? (JSON.parse(raw) as Member[]) : INITIAL_MEMBERS);
-    } catch {
-      setMembers(INITIAL_MEMBERS);
-    }
+      localStorage.removeItem(MEMBERS_STORAGE_KEY);
+    } catch {}
+
+    // Fetch real members from backend PostgreSQL database
+    const fetchLiveMembers = async () => {
+      try {
+        const token = localStorage.getItem("token") || (document.cookie.split("; ").find(c => c.startsWith("token="))?.split("=")[1]);
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch("http://localhost:4000/api/members", { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.members)) {
+            const mapped: Member[] = data.members.map((m: any) => ({
+              id: m.memberCode || m.id,
+              name: m.name,
+              role: (m.positions?.[0]?.toUpperCase().includes("LEAD") || m.positions?.[0]?.toUpperCase().includes("ADMIN") ? "ADMIN" : "MEMBER") as any,
+              tier: m.tier?.includes("Official") || m.tier?.includes("300") ? "Premium" : "Basic",
+              joined: m.startDate ? new Date(m.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Active",
+              status: m.status?.toLowerCase() === "active" ? "active" : "pending",
+              paid: m.duesPaid ? "₹300" : "Unpaid",
+            }));
+            setMembers(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live members:", err);
+      }
+    };
+    fetchLiveMembers();
+
     // Announcements
     const storedAnn = getStoredAnnouncements();
     setAnnouncements(storedAnn);
@@ -137,9 +165,8 @@ export default function AdminDashboard({
   } | null>(null);
   const [copiedId, setCopiedId] = useState(false);
 
-  // Helper: persist members to localStorage
+  // Helper: update members in state
   const saveMembers = (updated: Member[]) => {
-    try { localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(updated)); } catch {}
     setMembers(updated);
   };
 
@@ -174,9 +201,9 @@ export default function AdminDashboard({
   const [ledgerTypeFilter, setLedgerTypeFilter] = useState<"ALL" | "CREDIT" | "DEBIT">("ALL");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const handleLogout = () => {
-    document.cookie = "skyline_demo_user=; path=/; max-age=0; samesite=lax";
-    window.location.href = "/login?loggedOut=true";
+  const handleLogout = async () => {
+    await clearDemoUser();
+    window.location.href = "/?loggedOut=true";
   };
 
   // Living Ledger Metrics

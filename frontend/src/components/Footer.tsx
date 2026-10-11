@@ -34,10 +34,10 @@ export default function Footer() {
               </div>
               <div>
                 <span className="font-bold text-lg tracking-tight block">
-                  Skyline
+                  Club_Hub
                 </span>
                 <span className="text-xs text-primary-light/80 font-medium tracking-wide block">
-                  Student Association
+                  Campus Organization
                 </span>
               </div>
             </div>

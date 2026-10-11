@@ -5,26 +5,35 @@ import {
   Sparkles, AlertCircle, PackageCheck, CreditCard 
 } from "lucide-react";
 import { MERCH_PRODUCTS, MerchProduct } from "@/data/merchData";
-import { getDemoUser } from "@/lib/auth-demo";
+import { getDemoUserSync, AUTH_STATE_EVENT } from "@/lib/auth-demo";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<MerchProduct | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(() => getDemoUserSync());
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [isOrdered, setIsOrdered] = useState(false);
   const [isOrdering, setIsOrdering] = useState(false);
 
   useEffect(() => {
-    getDemoUser().then(setCurrentUser);
+    const updateUser = () => setCurrentUser(getDemoUserSync());
+    updateUser();
+    window.addEventListener(AUTH_STATE_EVENT, updateUser);
+    window.addEventListener("storage", updateUser);
+
     const found = MERCH_PRODUCTS.find((p) => p.id === id) || MERCH_PRODUCTS[0];
     setProduct(found);
     if (found?.sizes?.length > 0) {
       const firstAvailable = found.sizes.find(s => s.available);
       setSelectedSize(firstAvailable ? firstAvailable.size : found.sizes[0].size);
     }
+
+    return () => {
+      window.removeEventListener(AUTH_STATE_EVENT, updateUser);
+      window.removeEventListener("storage", updateUser);
+    };
   }, [id]);
 
   if (!product) return null;
@@ -38,7 +47,7 @@ export default function ProductDetailPage() {
 
   const handlePlaceOrder = () => {
     if (!currentUser) {
-      navigate("/signup");
+      navigate(`/login?redirect=${encodeURIComponent(`/shop/${product.id}`)}`);
       return;
     }
     setIsOrdering(true);
@@ -233,13 +242,13 @@ export default function ProductDetailPage() {
             ) : (
               <div className="space-y-2">
                 <Link
-                  to="/signup"
+                  to={`/signup?redirect=${encodeURIComponent(`/shop/${product.id}`)}`}
                   className="w-full py-3.5 rounded-xl bg-[#4A1942] hover:bg-[#3a1232] text-white font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 >
                   <span>Sign up to order</span>
                 </Link>
                 <div className="text-[11px] text-center text-gray-400">
-                  Already registered? <Link to="/login" className="text-[#017E84] font-bold hover:underline">Sign In</Link>
+                  Already registered? <Link to={`/login?redirect=${encodeURIComponent(`/shop/${product.id}`)}`} className="text-[#017E84] font-bold hover:underline">Sign In</Link>
                 </div>
               </div>
             )}

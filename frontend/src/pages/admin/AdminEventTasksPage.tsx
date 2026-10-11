@@ -55,13 +55,22 @@ const INITIAL_TASKS: TaskItem[] = [
   },
 ];
 
+import { getStoredEvents } from "@/lib/events-store";
+
 export default function AdminEventTasksPage() {
   const { id } = useParams<{ id: string }>();
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
+  const [eventTitle, setEventTitle] = useState("Campus Event");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newAssignee, setNewAssignee] = useState("Ananya Iyer");
   const [isSponsor, setIsSponsor] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+
+  useEffect(() => {
+    const events = getStoredEvents();
+    const ev = events.find((e) => e.id === id);
+    if (ev) setEventTitle(ev.title);
+  }, [id]);
 
   const moveTask = (taskId: string, newStatus: TaskItem["status"]) => {
     setTasks(tasks.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
@@ -94,8 +103,9 @@ export default function AdminEventTasksPage() {
     <DashboardLayout
       role="PRESIDENT"
       breadcrumb={[{ label: "Admin", href: "/admin" }, { label: "Events", href: "/admin/events" }, { label: `${id || "EVT-001"} Tasks` }]}
-      title={`Event Task Board (${id || "EVT-001"})`}
+      title={`${eventTitle} (${id || "EVT-001"}) - Task Board`}
       subtitle="Supervise volunteer task execution and verified sponsor deliverable tracking."
+
       actions={
         <button
           onClick={() => setShowAddModal(true)}

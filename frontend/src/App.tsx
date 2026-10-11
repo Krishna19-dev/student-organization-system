@@ -17,6 +17,7 @@ import MembershipPage from "@/app/membership/page";
 import LoginPage from "@/app/login/page";
 import SignupPage from "@/pages/auth/SignupPage";
 import JoinPayPage from "@/pages/auth/JoinPayPage";
+import MemberVerifyPage from "@/pages/public/MemberVerifyPage";
 
 // Member Portal Pages (/me/*)
 import MemberDashboardPage from "@/pages/member/MemberDashboardPage";
@@ -50,6 +51,7 @@ import AdminProductsPage from "@/pages/admin/AdminProductsPage";
 import AdminSponsorsPage from "@/pages/admin/AdminSponsorsPage";
 import AdminAuditPage from "@/pages/admin/AdminAuditPage";
 import AdminHandoverPage from "@/pages/admin/AdminHandoverPage";
+import AdminMemberVerificationPage from "@/pages/admin/AdminMemberVerificationPage";
 
 // Volunteer Desk
 import VolunteerPage from "@/app/volunteer/page";
@@ -97,12 +99,14 @@ export default function App() {
           <Route path="/join/pay" element={<JoinPayPage />} />
           <Route path="/checkout/ticket/:id" element={<CheckoutTicketPage />} />
           <Route path="/application-status" element={<ApplicationStatusPage />} />
+          <Route path="/verify/:token" element={<MemberVerifyPage />} />
 
           {/* =========================================
               2. Member Portal (/me/*)
              ========================================= */}
           <Route path="/me" element={<MemberDashboardPage />} />
           <Route path="/me/card" element={<DigitalCardPage />} />
+          <Route path="/me/digital-card" element={<DigitalCardPage />} />
           <Route path="/me/membership" element={<MemberPlanPage />} />
           <Route path="/me/tickets" element={<MyTicketsPage />} />
           <Route path="/me/orders" element={<MyOrdersPage />} />
@@ -123,6 +127,7 @@ export default function App() {
              ========================================= */}
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/members" element={<AdminMembersPage />} />
+          <Route path="/admin/member-verification" element={<AdminMemberVerificationPage />} />
           <Route path="/admin/roles" element={<AdminRolesPage />} />
           <Route path="/admin/products" element={<AdminProductsPage />} />
           <Route path="/admin/products/:id" element={<AdminProductsPage />} />

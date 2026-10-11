@@ -1,17 +1,48 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { 
   BarChart2, Users, DollarSign, TrendingUp, TrendingDown, 
   ArrowLeft, Download, CheckCircle2, AlertCircle 
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { getStoredEvents } from "@/lib/events-store";
 
 export default function AdminEventReportPage() {
   const { id } = useParams<{ id: string }>();
+  const [eventData, setEventData] = useState<any>(null);
 
-  const report = {
+  useEffect(() => {
+    const events = getStoredEvents();
+    const ev = events.find((e) => e.id === id) || events[0];
+    if (ev) {
+      const cap = ev.capacity || ev.totalSeats || 120;
+      const sold = ev.tickets || ev.seatsSold || 108;
+      const attended = Math.max(0, Math.round(sold * 0.9));
+      const noShows = sold - attended;
+      const ticketRev = sold * (ev.price || 200);
+      const sponsorRev = 40000;
+      const expenses = Math.round(ticketRev * 0.6) + 15000;
+      const net = ticketRev + sponsorRev - expenses;
+
+      setEventData({
+        eventId: ev.id,
+        title: ev.title,
+        seatsCapacity: cap,
+        seatsSold: sold,
+        attended,
+        noShows,
+        grossTicketRevenue: ticketRev,
+        sponsorshipRevenue: sponsorRev,
+        totalExpenses: expenses,
+        netProfit: net,
+        attendanceRate: `${Math.round((attended / (sold || 1)) * 100)}%`,
+      });
+    }
+  }, [id]);
+
+  const report = eventData || {
     eventId: id || "EVT-001",
-    title: "Skyline Tech & Design Summit 2026",
+    title: "Campus Event Report",
     seatsCapacity: 120,
     seatsSold: 108,
     attended: 98,
@@ -22,6 +53,7 @@ export default function AdminEventReportPage() {
     netProfit: 31000,
     attendanceRate: "90.7%",
   };
+
 
   return (
     <DashboardLayout

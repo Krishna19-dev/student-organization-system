@@ -90,6 +90,8 @@ async function getApplicationById(id) {
   return app;
 }
 
+const { issueMemberIdentity } = require('./memberIdentity.service');
+
 async function approveApplication(applicationId, adminId, { assignedPosition, note } = {}) {
   const app = await defaultPrisma.application.findUnique({
     where: { id: applicationId },
@@ -97,69 +99,57 @@ async function approveApplication(applicationId, adminId, { assignedPosition, no
   });
 
   if (!app) throw notFound('APPLICATION_NOT_FOUND', 'Application not found');
-  if (app.status !== 'UNDER_REVIEW') {
+  if (app.status !== 'UNDER_REVIEW' && app.status !== 'SUBMITTED' && app.status !== 'PAYMENT_VERIFIED') {
+    if (app.status === 'APPROVED') {
+      const membership = await defaultPrisma.membership.findFirst({
+        where: { userId: app.userId, status: 'ACTIVE' },
+      });
+      return {
+        ...app,
+        memberCode: membership?.memberCode,
+        qrToken: membership?.qrToken,
+      };
+    }
     throw conflict('INVALID_STATE', `Application status must be UNDER_REVIEW (current: ${app.status})`);
   }
 
   const finalPosition = assignedPosition || (app.desiredPosition !== 'NONE' ? app.desiredPosition : null);
-  const now = new Date();
-  const oneYearLater = new Date();
-  oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
 
-  const result = await defaultPrisma.$transaction(async (tx) => {
-    // 1. Update application
-    const updatedApp = await tx.application.update({
-      where: { id: applicationId },
-      data: {
-        status: 'APPROVED',
-        reviewerId: adminId,
-        reviewNote: note || null,
-        assignedPosition: finalPosition,
-        reviewedAt: now,
-      },
-    });
+  // Issue unique Member ID and secure QR token
+  const issuedIdentity = await issueMemberIdentity(applicationId, adminId, {
+    assignedPosition: finalPosition,
+    note,
+  });
 
-    // 2. Activate membership
-    await tx.membership.updateMany({
-      where: { userId: app.userId, status: 'PENDING' },
-      data: {
-        status: 'ACTIVE',
-        startDate: now,
-        expiryDate: oneYearLater,
-      },
-    });
-
-    // 3. If LEAD, assign role
-    if (app.type === 'LEAD' || finalPosition) {
-      await tx.roleAssignment.create({
-        data: {
-          userId: app.userId,
-          role: 'VOLUNTEER',
-          positionTitle: finalPosition || 'Team Lead',
-          startDate: now,
-        },
-      });
-    }
-
-    // 4. Audit
-    await auditService.log(tx, {
+  // Audit log
+  try {
+    await auditService.log(defaultPrisma, {
       actorId: adminId,
       action: 'APPLICATION_APPROVED',
       targetType: 'Application',
       targetId: applicationId,
     });
+  } catch {}
 
-    return updatedApp;
-  });
-
-  // 5. Send notification email (outside transaction)
+  // Send email notification if mailer is configured
   sendMail({
     to: app.user.email,
-    subject: 'Skyline Membership Approved!',
-    html: `<h2>Congratulations, ${app.user.name}!</h2><p>Your Skyline student association membership has been approved.</p>`,
+    subject: 'Club_Hub Membership Approved!',
+    html: `<h2>Congratulations, ${app.user.name}!</h2><p>Your Club_Hub membership has been approved. Your official Member ID is <strong>${issuedIdentity.memberCode}</strong>.</p>`,
   }).catch(() => {});
 
-  return result;
+  const updatedApp = await defaultPrisma.application.findUnique({
+    where: { id: applicationId },
+    include: { user: true, payment: true, reviewer: { select: { id: true, name: true } } },
+  });
+
+  return {
+    ...updatedApp,
+    memberCode: issuedIdentity.memberCode,
+    qrToken: issuedIdentity.qrToken,
+    qrCodeDataUrl: issuedIdentity.qrCodeDataUrl,
+    verificationUrl: issuedIdentity.verificationUrl,
+  };
 }
 
 async function rejectApplication(applicationId, adminId, { note }) {
