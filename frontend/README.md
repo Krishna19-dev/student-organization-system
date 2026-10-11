@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) with your browser.
+3. Open in localhost in Port "3000" with your browser.
 
 ## Product Modules
 1. **Members & Membership Tiers**: Dues, expiry, renewal reminders
