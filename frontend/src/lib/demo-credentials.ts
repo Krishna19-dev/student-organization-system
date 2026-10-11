@@ -85,7 +85,7 @@ export const ALL_DEMO_ACCOUNTS: DemoCredentialItem[] = [
   },
 ];
 
-export const GUEST_DEMO_CREDENTIALS: DemoCredentialItem = ALL_DEMO_ACCOUNTS[4];
+export const GUEST_DEMO_CREDENTIALS = ALL_DEMO_ACCOUNTS[3];
 export const DEMO_COOKIE_NAME = "skyline_demo_user";
 export const AUTH_TOKEN_COOKIE = "token";
 
